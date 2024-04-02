@@ -324,6 +324,9 @@ public:
     uint16_t mission_item_reached_index = AP_MISSION_CMD_INDEX_NONE;
 
     // common send functions
+    //<-- ------------------------------------------------------------------- ->//
+    void send_mav_message_QH_FCStatus(void);
+    //<-- ------------------------------------------------------------------- ->//
     void send_heartbeat(void) const;
     void send_meminfo(void);
     void send_fence_status() const;
@@ -652,6 +655,10 @@ protected:
     void can_frame_callback(uint8_t bus, const AP_HAL::CANFrame &);
     MAV_RESULT handle_can_forward(const mavlink_command_long_t &packet, const mavlink_message_t &msg);
     void handle_can_frame(const mavlink_message_t &msg) const;
+
+    //<-- ------------------------------------------------------------------- ->//
+    void handle_QH_FCControl(const mavlink_message_t &msg) const;
+    //<-- ------------------------------------------------------------------- ->//
 
     void handle_optical_flow(const mavlink_message_t &msg);
 

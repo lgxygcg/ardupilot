@@ -993,6 +993,9 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if HAL_ADSB_ENABLED
         { MAVLINK_MSG_ID_UAVIONIX_ADSB_OUT_STATUS, MSG_UAVIONIX_ADSB_OUT_STATUS},
 #endif
+        //<-- ------------------------------------------------------------------- ->//
+        { MAVLINK_MSG_ID_QH_FCSTATUS, MSG_QH_FCSTATUS},
+        //<-- ------------------------------------------------------------------- ->//
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -2755,9 +2758,28 @@ MAV_STATE GCS_MAVLINK::system_status() const
     return _system_status;
 }
 
+//<-- ------------------------------------------------------------------- ->//
+void GCS_MAVLINK::send_mav_message_QH_FCStatus(void)
+{
+    uint32_t Status = 0;
+    int16_t FCTemperature[4] = {1,2,3,4};
+    int16_t Press = 10;
+    int16_t FCVoltage = 54;
+    int16_t FCCurrent = 2;
+    int16_t LIVoltage = 48;
+    int16_t LICurrent = 1;
+    int16_t AmbTemperature = 28;
+    int8_t AmbHumidity = 20;
+    int8_t AmbControlStatus = 1;
+
+    mavlink_msg_qh_fcstatus_send(chan, Status, FCTemperature, Press, FCVoltage, FCCurrent, LIVoltage, LICurrent, AmbTemperature, AmbHumidity, AmbControlStatus);
+}
+//<-- ------------------------------------------------------------------- ->//
+
 /*
   Send MAVLink heartbeat
  */
+
 void GCS_MAVLINK::send_heartbeat() const
 {
     mavlink_msg_heartbeat_send(
@@ -3758,6 +3780,17 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
     }
 }
 
+//<-- ------------------------------------------------------------------- ->//
+void GCS_MAVLINK::handle_QH_FCControl(const mavlink_message_t &msg) const
+{
+    mavlink_qh_fccontrol_t packet;
+
+    mavlink_msg_qh_fccontrol_decode(&msg, &packet);
+
+    packet.Command = packet.Command;
+}
+//<-- ------------------------------------------------------------------- ->//
+
 /*
   handle messages which don't require vehicle specific data
  */
@@ -4033,6 +4066,11 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         AP_CheckFirmware::handle_msg(chan, msg);
         break;
 #endif
+    //<-- ------------------------------------------------------------------- ->//
+    case MAVLINK_MSG_ID_QH_FCCONTROL:
+        handle_QH_FCControl(msg);
+        break;
+    //<-- ------------------------------------------------------------------- ->//
     }
 
 }

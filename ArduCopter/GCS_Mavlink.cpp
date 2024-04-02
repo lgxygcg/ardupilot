@@ -381,6 +381,12 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 #endif
         break;
     }
+    //<-- ------------------------------------------------------------------- ->//
+    case MSG_QH_FCSTATUS:
+        send_mav_message_QH_FCStatus();
+        //gcs().send_text(MAV_SEVERITY_DEBUG, "hahahahaha !!!");
+        break;
+    //<-- ------------------------------------------------------------------- ->//
 
     default:
         return GCS_MAVLINK::try_send_message(id);
@@ -527,7 +533,8 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_ATTITUDE,
     MSG_SIMSTATE,
     MSG_AHRS2,
-    MSG_PID_TUNING // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
+    MSG_PID_TUNING, // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
+    MSG_QH_FCSTATUS
 };
 static const ap_message STREAM_EXTRA2_msgs[] = {
     MSG_VFR_HUD

@@ -1,4 +1,30 @@
 {
-    "cSpell.language": "en-GB",
-    "astyle.astylerc": "${workspaceFolder}/Tools/CodeStyle/astylerc"
+    "files.associations": {
+        "*.ipp": "cpp",
+        "*.tcc": "cpp",
+        "*.inc": "cpp",
+        "unordered_map": "cpp",
+        "fstream": "cpp",
+        "istream": "cpp",
+        "numeric": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "bitset": "cpp",
+        "optional": "cpp",
+        "functional": "cpp",
+        "random": "cpp",
+        "future": "cpp",
+        "memory_resource": "cpp",
+        "streambuf": "cpp",
+        "regex": "cpp",
+        "condition_variable": "cpp"
+    },
+    "files.exclude": {
+        "**/.github": true,
+        "**/AntennaTracker": true,
+        "**/ArduPlane": true,
+        "**/ArduSub": true,
+//        "**/build": true,
+        "**/Rover": true,
+    }
 }

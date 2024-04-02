@@ -285,7 +285,8 @@ const AP_Param::GroupInfo AP_BoardConfig::var_info[] = {
     // @Description: Board specific option flags
     // @Bitmask: 0:Enable hardware watchdog, 1:Disable MAVftp, 2:Enable set of internal parameters, 3:Enable Debug Pins, 4:Unlock flash on reboot, 5:Write protect firmware flash on reboot, 6:Write protect bootloader flash on reboot
     // @User: Advanced
-    AP_GROUPINFO("OPTIONS", 19, AP_BoardConfig, _options, HAL_BRD_OPTIONS_DEFAULT),
+    //AP_GROUPINFO("OPTIONS", 19, AP_BoardConfig, _options, HAL_BRD_OPTIONS_DEFAULT),
+    AP_GROUPINFO("OPTIONS", 19, AP_BoardConfig, _options,BOARD_OPTION_DEBUG_ENABLE),
 
     // @Param: BOOT_DELAY
     // @DisplayName: Boot delay
