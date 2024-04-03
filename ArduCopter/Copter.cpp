@@ -256,6 +256,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if STATS_ENABLED == ENABLED
     SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100, 171),
 #endif
+    //<-- ------------------------------------------------------------------- ->//
+    SCHED_TASK(update_QHFC,          200,   100,  174),
+    //<-- ------------------------------------------------------------------- ->//
 };
 
 void Copter::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
@@ -494,6 +497,16 @@ void Copter::update_batt_compass(void)
         compass.read();
     }
 }
+
+//<-- ------------------------------------------------------------------- ->//
+void Copter::update_QHFC(void)
+{
+     //(qhfc.update());
+     if(qhfc.update()){
+        //Log_Write_qhfc();
+    }
+}
+//<-- ------------------------------------------------------------------- ->//
 
 // Full rate logging of attitude, rate and pid loops
 // should be run at loop rate

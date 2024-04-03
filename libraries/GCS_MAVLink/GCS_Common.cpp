@@ -57,6 +57,10 @@
 #include <RC_Channel/RC_Channel.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 
+//<-- ------------------------------------------------------------------- ->//
+#include <AP_QHFC/AP_QHFC.h>   //定义氢航通信
+//<-- ------------------------------------------------------------------- ->//
+
 #include "MissionItemProtocol_Waypoints.h"
 #include "MissionItemProtocol_Rally.h"
 #include "MissionItemProtocol_Fence.h"
@@ -3787,6 +3791,17 @@ void GCS_MAVLINK::handle_QH_FCControl(const mavlink_message_t &msg) const
 
     mavlink_msg_qh_fccontrol_decode(&msg, &packet);
 
+    AP_QHFC &qhfc = AP::qhfc();
+
+    switch(packet.Command)
+    {
+        case QHFC_COMMAND_ONOFF:
+            if(packet.Param == QHFC_CMD_PARAM_ON)
+                qhfc.OnOff_Cmd = 1;
+            else if(packet.Param == QHFC_CMD_PARAM_OFF)
+                qhfc.OnOff_Cmd = 0;
+            break;
+    }
     packet.Command = packet.Command;
 }
 //<-- ------------------------------------------------------------------- ->//

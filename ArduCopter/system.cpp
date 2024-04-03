@@ -1,5 +1,6 @@
 #include "Copter.h"
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
+#include <AP_QHFC/AP_QHFC.h>
 
 /*****************************************************************************
 *   The init_ardupilot function processes everything we need for an in - air restart
@@ -103,6 +104,10 @@ void Copter::init_ardupilot()
     // Do GPS init
     gps.set_log_gps_bit(MASK_LOG_GPS);
     gps.init(serial_manager);
+
+    //<-- ------------------------------------------------------------------- ->//
+    qhfc.init(serial_manager);
+    //<-- ------------------------------------------------------------------- ->//
 
     AP::compass().set_log_bit(MASK_LOG_COMPASS);
     AP::compass().init();

@@ -72,6 +72,8 @@
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 #include <AP_Winch/AP_Winch_config.h>
 
+#include <AP_QHFC/AP_QHFC.h>
+
 // Configuration
 #include "defines.h"
 #include "config.h"
@@ -247,6 +249,8 @@ private:
     RC_Channel *channel_yaw;
 
     AP_Logger logger;
+
+    AP_QHFC qhfc{};
 
     // flight modes convenience array
     AP_Int8 *flight_modes;
@@ -679,6 +683,11 @@ private:
     // returns true if the EKF failsafe has triggered
     bool has_ekf_failsafed() const override;
 #endif // AP_SCRIPTING_ENABLED
+
+    //<-- ------------------------------------------------------------------- ->//
+    void update_QHFC(void);
+    //<-- ------------------------------------------------------------------- ->//
+
     void rc_loop();
     void throttle_loop();
     void update_batt_compass(void);
