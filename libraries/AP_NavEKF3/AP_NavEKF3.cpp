@@ -911,6 +911,8 @@ void NavEKF3::UpdateFilter(void)
         // have already used more than 1/3 of the CPU budget for this
         // loop then suppress the prediction step. This allows
         // multiple EKF instances to cooperate on scheduling
+        // 如果我们没有超过3个IMU帧，并且我们已经为此循环使用了超过1/3的CPU预算，则抑制预测步骤。
+        // 这允许多个EKF实例在调度上进行协作
         bool allow_state_prediction = true;
         if (core[i].getFramesSincePredict() < (_framesPerPrediction+3) &&
             AP::dal().ekf_low_time_remaining(AP_DAL::EKFType::EKF3, i)) {
@@ -922,6 +924,9 @@ void NavEKF3::UpdateFilter(void)
     // If the current core selected has a bad error score or is unhealthy, switch to a healthy core with the lowest fault score
     // Don't start running the check until the primary core has started returned healthy for at least 10 seconds to avoid switching
     // due to initial alignment fluctuations and race conditions
+    // 如果当前选定的core错误分数不好或不健康，请切换到故障分数最低的健康core
+    // 在主核心开始恢复健康至少10秒之前，不要开始运行检查，以避免切换
+    // 由于初始对准波动和竞赛条件
     if (!runCoreSelection) {
         static uint64_t lastUnhealthyTime_us = 0;
         if (!core[primary].healthy() || lastUnhealthyTime_us == 0) {
@@ -933,11 +938,14 @@ void NavEKF3::UpdateFilter(void)
     const bool armed  = AP::dal().get_armed();
 
     // core selection is only available after the vehicle is armed, else forced to lane 0 if its healthy
+    // 核心选择只有在车辆武装后才可用，否则如果车辆处于健康状态，则强制进入0车道
     if (runCoreSelection && armed) {
         // update this instance's error scores for all active cores and get the primary core's error score
+        // 更新所有活动核心的此实例的错误分数，并获取主核心的错误分数
         float primaryErrorScore = updateCoreErrorScores();
 
         // update the accumulated relative error scores for all active cores
+        // 更新所有活动核心的累积相对误差分数
         updateCoreRelativeErrors();
 
         bool betterCore = false;
@@ -945,6 +953,7 @@ void NavEKF3::UpdateFilter(void)
         uint8_t newPrimaryIndex = primary;
 
         // loop through all available cores to find if an alternative core is available
+        // 循环浏览所有可用的核心，以查找是否有可用的替代核心
         for (uint8_t coreIndex=0; coreIndex<num_cores; coreIndex++) {
             if (coreIndex != primary) {
                 float altCoreError = coreRelativeErrors[coreIndex];
@@ -953,15 +962,22 @@ void NavEKF3::UpdateFilter(void)
                 // 1. healthy and states have been updated on this time step
                 // 2. has relative error less than primary core error
                 // 3. not been the primary core for at least 10 seconds
+                // 可根据两个条件选择一个替代型芯-
+                // 1.健康且状态已在此时间步长更新
+                // 2.相对误差小于一次堆芯误差
+                // 3.至少有10秒没有成为主要核心
                 altCoreAvailable = coreBetterScore(coreIndex, newPrimaryIndex) &&
                     imuSampleTime_us - coreLastTimePrimary_us[coreIndex] > 1E7;
 
                 if (altCoreAvailable) {
                     // if this core has a significantly lower relative error to the active primary, we consider it as a 
                     // better core and would like to switch to it even if the current primary is healthy
+                    // 如果这个核心相对于活动的初级有一个明显较低的相对误差，我们认为它是一个更好的核心，即使当前的初级是健康的，我们也希望切换到它
                     betterCore = altCoreError <= -BETTER_THRESH; // a better core if its relative error is below a substantial level than the primary's
+                                                                 // 如果其相对误差低于基本误差的实质水平，则是一个更好的核心
                     // handle the case where the secondary core is faster to complete yaw alignment which can happen
                     // in flight when oeprating without a magnetomer
+                    // 处理二次堆芯更快地完成偏航角对准的情况，这可能发生在飞行中没有磁强计的情况下
                     const NavEKF3_core &newCore = core[coreIndex];
                     const NavEKF3_core &oldCore = core[primary];
                     betterCore |= newCore.have_aligned_yaw() && !oldCore.have_aligned_yaw();
@@ -976,6 +992,11 @@ void NavEKF3::UpdateFilter(void)
         // 2. is unhealthy
         // 3. is healthy, but a better core is available
         // also update the yaw and position reset data to capture changes due to the lane switch
+        // 如果另一个核心可用，并且活动主核心满足以下条件之一，则切换核心-
+        // 1.有一个糟糕的错误分数
+        // 2.不健康
+        // 3.是健康的，但有更好的核心
+        // 还更新偏航角和位置重置数据，以捕捉由于车道开关引起的变化
         if (altCoreAvailable && (primaryErrorScore > 1.0f || !core[primary].healthy() || betterCore)) {
             updateLaneSwitchYawResetData(newPrimaryIndex, primary);
             updateLaneSwitchPosResetData(newPrimaryIndex, primary);
@@ -998,10 +1019,15 @@ void NavEKF3::UpdateFilter(void)
         // used as primary for some flights. As different IMUs may
         // have quite different noise characteristics this leads to
         // inconsistent performance
+        // 当在地面上并解除武装时，强制选定的主堆芯。
+        // 这避免了我们以每次飞行使用IMU的抽奖结束。
+        // 否则，核心选择更新的定时与GPS更新的定时的对准可能导致除了第一个核心之外的核心被用作某些飞行的主要核心。
+        // 由于不同的IMU可能具有完全不同的噪声特性，这导致性能不一致
         primary = user_primary;
     }
 
     // align position of inactive sources to ahrs
+    // 将非活动源的位置与ahrs对齐
     sources.align_inactive_sources();
 }
 

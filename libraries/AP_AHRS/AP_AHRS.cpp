@@ -312,17 +312,25 @@ void AP_AHRS::update(bool skip_ins_update)
     // orientation (e.g. based on the AHRS_ORIENTATION parameter)
     // allow for runtime change of orientation
     // this makes initial config easier
+
+    // 定期检查，看看我们是否应该更新AHRS
+    // 方向（例如，基于AHRS_orientation参数）
+    // 允许在运行时更改方向
+    // 这使得初始配置更容易
     update_orientation();
 
     if (!skip_ins_update) {
         // tell the IMU to grab some data
+        // 告诉IMU获取一些数据
         AP::ins().update();
     }
 
     // support locked access functions to AHRS data
+    // 支持对AHRS数据的锁定访问功能
     WITH_SEMAPHORE(_rsem);
 
     // see if we have to restore home after a watchdog reset:
+    // 看看我们是否必须在看门狗重置后恢复家园：
     if (!_checked_watchdog_home) {
         load_watchdog_home();
         _checked_watchdog_home = true;
@@ -330,14 +338,18 @@ void AP_AHRS::update(bool skip_ins_update)
 
     // drop back to normal priority if we were boosted by the INS
     // calling delay_microseconds_boost()
+    // 如果我们得到了INS的支持，就会恢复到正常的优先级
+    // 调用delay_miculs_boost（）
     hal.scheduler->boost_end();
 
     // update autopilot-body-to-vehicle-body from _trim parameters:
+    // 从_trim参数,将自动驾驶仪机身更新为车身（_T）：
     update_trim_rotation_matrices();
 
     update_DCM();
 
     // update takeoff/touchdown flags
+    // 更新起飞/着陆标志
     update_flags();
 
 #if AP_AHRS_SIM_ENABLED
@@ -351,6 +363,8 @@ void AP_AHRS::update(bool skip_ins_update)
     if (_ekf_type == 2) {
         // if EK2 is primary then run EKF2 first to give it CPU
         // priority
+        // 如果EK2是主要的，则首先运行EKF2，为其提供CPU
+        // 优先事项
 #if HAL_NAVEKF2_AVAILABLE
         update_EKF2();
 #endif
@@ -359,6 +373,7 @@ void AP_AHRS::update(bool skip_ins_update)
 #endif
     } else {
         // otherwise run EKF3 first
+        // priority否则先运行EKF3
 #if HAL_NAVEKF3_AVAILABLE
         update_EKF3();
 #endif
@@ -369,10 +384,12 @@ void AP_AHRS::update(bool skip_ins_update)
 
 #if AP_MODULE_SUPPORTED
     // call AHRS_update hook if any
+    // 调用AHRS_update钩子（如果有）
     AP_Module::call_hook_AHRS_update(*this);
 #endif
 
     // push gyros if optical flow present
+    // 如果存在光流，则推动陀螺仪
     if (hal.opticalflow) {
         const Vector3f &exported_gyro_bias = get_gyro_drift();
         hal.opticalflow->push_gyro_bias(exported_gyro_bias.x, exported_gyro_bias.y);
@@ -380,10 +397,12 @@ void AP_AHRS::update(bool skip_ins_update)
 
     if (_view != nullptr) {
         // update optional alternative attitude view
+        // 更新可选的备选姿态视图
         _view->update();
     }
 
     // update AOA and SSA
+    // 更新AOA和SSA
     update_AOA_SSA();
 
     EKFType active = active_EKF_type();
@@ -421,6 +440,7 @@ void AP_AHRS::update(bool skip_ins_update)
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     /*
       add timing jitter to simulate slow EKF response
+      添加定时抖动以模拟缓慢的EKF响应
      */
     const auto *sitl = AP::sitl();
     if (sitl->loop_time_jitter_us > 0) {
@@ -558,11 +578,13 @@ void AP_AHRS::update_EKF3(void)
 {
     if (!_ekf3_started) {
         // wait 1 second for DCM to output a valid tilt error estimate
+        // 等待1秒，等待DCM输出有效的倾斜误差估计
         if (start_time_ms == 0) {
             start_time_ms = AP_HAL::millis();
         }
         // if we're doing Replay logging then don't allow any data
         // into the EKF yet.  Don't allow it to block us for long.
+        // 如果我们正在进行Replay日志记录，那么还不允许任何数据进入EKF。不要让它阻挡我们太久。
         if (!hal.util->was_watchdog_reset()) {
             if (AP_HAL::millis() - start_time_ms < 5000) {
                 if (!AP::logger().allow_start_ekf()) {
@@ -590,24 +612,30 @@ void AP_AHRS::update_EKF3(void)
             const AP_InertialSensor &_ins = AP::ins();
 
             // Use the primary EKF to select the primary gyro
+            // 使用主EKF选择主陀螺仪
             const int8_t primary_imu = EKF3.getPrimaryCoreIMUIndex();
             const uint8_t primary_gyro = primary_imu>=0?primary_imu:_ins.get_primary_gyro();
             const uint8_t primary_accel = primary_imu>=0?primary_imu:_ins.get_primary_accel();
 
             // get gyro bias for primary EKF and change sign to give gyro drift
             // Note sign convention used by EKF is bias = measurement - truth
+            // 获得主EKF的陀螺仪偏置，并更改符号以给出陀螺仪漂移
+            // EKF使用的注释符号约定为bias=测量-真值
             _gyro_drift.zero();
             EKF3.getGyroBias(-1,_gyro_drift);
             _gyro_drift = -_gyro_drift;
 
             // use the same IMU as the primary EKF and correct for gyro drift
+            // 使用与主EKF相同的IMU并校正陀螺仪漂移
             _gyro_estimate = _ins.get_gyro(primary_gyro) + _gyro_drift;
 
             // get 3-axis accel bias festimates for active EKF (this is usually for the primary IMU)
+            // 获得活动EKF的3轴加速度偏移估计值（这通常用于主IMU）
             Vector3f &abias = _accel_bias;
             EKF3.getAccelBias(-1,abias);
 
             // use the primary IMU for accel earth frame
+            // 将主IMU用于加速接地框架
             Vector3f accel = _ins.get_accel(primary_accel);
             accel -= abias;
             _accel_ef = _dcm_matrix * get_rotation_autopilot_body_to_vehicle_body() * accel;

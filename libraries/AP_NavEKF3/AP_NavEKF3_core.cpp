@@ -647,9 +647,11 @@ void NavEKF3_core::CovarianceInit()
 void NavEKF3_core::UpdateFilter(bool predict)
 {
     // Set the flag to indicate to the filter that the front-end has given permission for a new state prediction cycle to be started
+    // 设置标志以向滤波器指示前端已允许启动新的状态预测周期
     startPredictEnabled = predict;
 
     // don't run filter updates if states have not been initialised
+    // 如果状态尚未初始化，请不要运行滤波器更新
     if (!statesInitialised) {
         return;
     }
@@ -657,60 +659,81 @@ void NavEKF3_core::UpdateFilter(bool predict)
     fill_scratch_variables();
 
     // update sensor selection (for affinity)
+    // 更新传感器选择（针对亲和性）
     update_sensor_selection();
 
     // TODO - in-flight restart method
+    // TODO-飞行中的重新启动方法
 
     // Check arm status and perform required checks and mode changes
+    // 检查臂状态并执行所需检查和模式更改
     controlFilterModes();
 
     // read IMU data as delta angles and velocities
+    // 将IMU数据读取为三角角和速度
     readIMUData();
 
     // Run the EKF equations to estimate at the fusion time horizon if new IMU data is available in the buffer
+    // 运行EKF方程，以在融合时间范围内估计缓冲区中是否有新的IMU数据
     if (runUpdates) {
         // Predict states using IMU data from the delayed time horizon
+        // 使用延迟时间范围的IMU数据预测状态
         UpdateStrapdownEquationsNED();
 
         // Predict the covariance growth
+        // 预测协方差增长
         CovariancePrediction(nullptr);
 
         // Run the IMU prediction step for the GSF yaw estimator algorithm
         // using IMU and optionally true airspeed data.
         // Must be run before SelectMagFusion() to provide an up to date yaw estimate
+        // 运行GSF偏航角估计器算法的IMU预测步骤
+        // 使用IMU和可选的真实空速数据。
+        // 必须在SelectMagFusion（）之前运行，才能提供最新的偏航角估计
         runYawEstimatorPrediction();
 
         // Update states using  magnetometer or external yaw sensor data
+        // 使用磁力计或外部偏航角传感器数据更新状态
         SelectMagFusion();
 
         // Update states using GPS and altimeter data
+        // 使用GPS和高度计数据更新状态
         SelectVelPosFusion();
 
         // Run the GPS velocity correction step for the GSF yaw estimator algorithm
         // and use the yaw estimate to reset the main EKF yaw if requested
         // Muat be run after SelectVelPosFusion() so that fresh GPS data is available
+        // 运行GSF偏航角估计器算法的GPS速度校正步骤，
+        // 并在请求时使用偏航角估计重置主EKF偏航角必须在SelectVelPosFusion（）之后运行，
+        // 以便获得新的GPS数据
         runYawEstimatorCorrection();
 
 #if EK3_FEATURE_BEACON_FUSION
         // Update states using range beacon data
+        // 使用测距信标数据更新状态
         SelectRngBcnFusion();
 #endif
 
         // Update states using optical flow data
+        // 使用光流数据更新状态
         SelectFlowFusion();
 
 #if EK3_FEATURE_BODY_ODOM
         // Update states using body frame odometry data
+        // 使用车身骨架里程计数据更新状态
         SelectBodyOdomFusion();
 #endif
 
         // Update states using airspeed data
+        // 使用空速数据更新状态
         SelectTasFusion();
 
         // Update states using sideslip constraint assumption for fly-forward vehicles or body drag for multicopters
+        // 使用向前飞行车辆的侧滑约束假设或多翼飞机的机身阻力更新状态
         SelectBetaDragFusion();
 
         // Update the filter status
+        // 更新滤波器状态
         updateFilterStatus();
 
         if (imuSampleTime_ms - last_oneHz_ms >= 1000) {
@@ -722,6 +745,7 @@ void NavEKF3_core::UpdateFilter(bool predict)
     }
 
     // Wind output forward from the fusion to output time horizon
+    // 从融合到输出时间范围的正向风输出
     calcOutputStates();
 
     /*
@@ -730,6 +754,9 @@ void NavEKF3_core::UpdateFilter(bool predict)
       would be "gyros still settling" when the user tries to arm. In
       that state the EKF can't recover, so we do a hard reset and let
       it try again.
+      这是一种检查，以应对车辆闲置在地上，对状态过于自信的情况。
+      当用户试图武装时，症状将是“陀螺仪仍在稳定”。
+      在这种状态下，EKF无法恢复，所以我们进行了一次硬重置，让它再试一次。
      */
     if (filterStatus.value != 0) {
         last_filter_ok_ms = dal.millis();
@@ -739,6 +766,7 @@ void NavEKF3_core::UpdateFilter(bool predict)
         dal.millis() - last_filter_ok_ms > 5000 &&
         !dal.get_armed()) {
         // we've been unhealthy for 5 seconds after being healthy, reset the filter
+        // 我们在健康后已经有5秒钟不健康了，请重新设置滤波器
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "EKF3 IMU%u forced reset",(unsigned)imu_index);
         last_filter_ok_ms = 0;
         statesInitialised = false;
@@ -1027,43 +1055,54 @@ void NavEKF3_core::calcOutputStates()
  * Output for change reference: AP_NavEKF3/derivation/generated/covariance_generated.cpp
  * Argument rotVarVecPtr is pointer to a vector defining the earth frame uncertainty variance of the quaternion states
  * used to perform a reset of the quaternion state covariances only. Set to null for normal operation.
+ * 使用SymPy生成的代数方程计算预测状态协方差矩阵
+ * 有关推导，请参见AP_NavEKF3/deverification/main.py
+ * 更改参考的输出：AP_NavEKF3/derivation/generated/covariance_generated.cpp
+ * 自变量rotVarVecPtr指向定义四元数状态的地球坐标系不确定性方差的矢量
+ * 仅用于执行四元数状态协变的重置。设置为null以进行正常操作。
 */
 void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 {
-    ftype daxVar;       // X axis delta angle noise variance rad^2
-    ftype dayVar;       // Y axis delta angle noise variance rad^2
-    ftype dazVar;       // Z axis delta angle noise variance rad^2
-    ftype dvxVar;       // X axis delta velocity variance noise (m/s)^2
-    ftype dvyVar;       // Y axis delta velocity variance noise (m/s)^2
-    ftype dvzVar;       // Z axis delta velocity variance noise (m/s)^2
-    ftype dvx;          // X axis delta velocity (m/s)
-    ftype dvy;          // Y axis delta velocity (m/s)
-    ftype dvz;          // Z axis delta velocity (m/s)
-    ftype dax;          // X axis delta angle (rad)
-    ftype day;          // Y axis delta angle (rad)
-    ftype daz;          // Z axis delta angle (rad)
-    ftype q0;           // attitude quaternion
-    ftype q1;           // attitude quaternion
-    ftype q2;           // attitude quaternion
-    ftype q3;           // attitude quaternion
-    ftype dax_b;        // X axis delta angle measurement bias (rad)
-    ftype day_b;        // Y axis delta angle measurement bias (rad)
-    ftype daz_b;        // Z axis delta angle measurement bias (rad)
-    ftype dvx_b;        // X axis delta velocity measurement bias (rad)
-    ftype dvy_b;        // Y axis delta velocity measurement bias (rad)
-    ftype dvz_b;        // Z axis delta velocity measurement bias (rad)
+    ftype daxVar;       // X axis delta angle noise variance rad^2      -> x轴Δ角噪声方差rad^2
+    ftype dayVar;       // Y axis delta angle noise variance rad^2      -> y轴Δ角噪声方差rad^2
+    ftype dazVar;       // Z axis delta angle noise variance rad^2      -> z轴Δ角噪声方差rad^2
+    ftype dvxVar;       // X axis delta velocity variance noise (m/s)^2 -> x轴Δ速度方差噪声（m/s）^2
+    ftype dvyVar;       // Y axis delta velocity variance noise (m/s)^2 -> y轴Δ速度方差噪声（m/s）^2
+    ftype dvzVar;       // Z axis delta velocity variance noise (m/s)^2 -> z轴Δ速度方差噪声（m/s）^2
+    ftype dvx;          // X axis delta velocity (m/s)                  -> x轴Δ速度（m/s）
+    ftype dvy;          // Y axis delta velocity (m/s)                  -> y轴Δ速度（m/s）
+    ftype dvz;          // Z axis delta velocity (m/s)                  -> z轴Δ速度（m/s）
+    ftype dax;          // X axis delta angle (rad)                     -> x轴Δ角（rad）
+    ftype day;          // Y axis delta angle (rad)                     -> y轴Δ角（rad）
+    ftype daz;          // Z axis delta angle (rad)                     -> z轴Δ角（rad）
+    ftype q0;           // attitude quaternion                          -> 姿态四元数
+    ftype q1;           // attitude quaternion                          -> 姿态四元数
+    ftype q2;           // attitude quaternion                          -> 姿态四元数
+    ftype q3;           // attitude quaternion                          -> 姿态四元数
+    ftype dax_b;        // X axis delta angle measurement bias (rad)    -> x轴Δ角测量偏差（rad）
+    ftype day_b;        // Y axis delta angle measurement bias (rad)    -> y轴Δ角测量偏差（rad）
+    ftype daz_b;        // Z axis delta angle measurement bias (rad)    -> z轴Δ角测量偏差（rad）
+    ftype dvx_b;        // X axis delta velocity measurement bias (rad) -> x轴Δ速度测量偏差（m/s）?
+    ftype dvy_b;        // Y axis delta velocity measurement bias (rad) -> y轴Δ速度测量偏差（m/s）?
+    ftype dvz_b;        // Z axis delta velocity measurement bias (rad) -> z轴Δ速度测量偏差（m/s）?
 
     // Calculate the time step used by the covariance prediction as an average of the gyro and accel integration period
     // Constrain to prevent bad timing jitter causing numerical conditioning problems with the covariance prediction
+    // 将协方差预测使用的时间步长计算为陀螺仪和加速度积分周期的平均值
+    // 约束以防止不良定时抖动导致协方差预测的数值调节问题
     dt = constrain_ftype(0.5f*(imuDataDelayed.delAngDT+imuDataDelayed.delVelDT),0.5f * dtEkfAvg, 2.0f * dtEkfAvg);
 
     // use filtered height rate to increase wind process noise when climbing or descending
     // this allows for wind gradient effects.Filter height rate using a 10 second time constant filter
+    // 在攀爬或下降时，使用过滤高度率来增加风过程噪音
+    // 这允许风梯度效应。使用10秒时间常数过滤器的过滤器高度比率
     ftype alpha = 0.1f * dt;
     hgtRate = hgtRate * (1.0f - alpha) - stateStruct.velocity.z * alpha;
 
     // calculate covariance prediction process noise added to diagonals of predicted covariance matrix
     // error growth of first 10 kinematic states is built into auto-code for covariance prediction and driven by IMU noise parameters
+    // 计算加入预测协方差矩阵对角线的协方差预测过程噪声
+    // 前10个运动状态的误差增长被构建到协方差预测的自动代码中，并由IMU噪声参数驱动
     Vector14 processNoiseVariance = {};
 
     if (!inhibitDelAngBiasStates) {
@@ -1073,6 +1112,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     if (!inhibitDelVelBiasStates) {
         // default process noise (m/s)^2
+        // 默认过程噪声（m/s）^2
         ftype dVelBiasVar = sq(sq(dt) * constrain_ftype(frontend->_accelBiasProcessNoise, 0.0, 1.0));
         for (uint8_t i=3; i<=5; i++) {
             processNoiseVariance[i] = dVelBiasVar;
@@ -1081,12 +1121,14 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     if (!inhibitMagStates && lastInhibitMagStates) {
         // when starting 3D fusion we want to reset mag variances
+        // 当开始3D融合时，我们希望重置mag方差
         needMagBodyVarReset = true;
         needEarthBodyVarReset = true;
     }
 
     if (needMagBodyVarReset) {
         // reset body mag variances
+        // 重置主体mag方差
         needMagBodyVarReset = false;
         zeroCols(P,19,21);
         zeroRows(P,19,21);
@@ -1097,6 +1139,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     if (needEarthBodyVarReset) {
         // reset mag earth field variances
+        // 重置磁-地场方差
         needEarthBodyVarReset = false;
         zeroCols(P,16,18);
         zeroRows(P,16,18);
@@ -1105,6 +1148,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
         P[18][18] = P[16][16];
         // Fusing the declinaton angle as an observaton with a 20 deg uncertainty helps
         // to stabilise the earth field.
+        // 将倾角融合为具有20度不确定性的观测值有助于稳定地磁场。
         FuseDeclination(radians(20.0f));
     }
 
@@ -1120,11 +1164,13 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
         const bool isDragFusionDeadReckoning = filterStatus.flags.dead_reckoning && !dragTimeout;
         if (isDragFusionDeadReckoning) {
             // when dead reckoning using drag fusion stop learning wind states to provide a more stable velocity estimate
+            // 当使用阻力融合的航位推算停止学习风况以提供更稳定的速度估计时
             P[23][23] = P[22][22] = 0.0f;
         } else {
 	        ftype windVelVar  = sq(dt * constrain_ftype(frontend->_windVelProcessNoise, 0.0f, 1.0f) * (1.0f + constrain_ftype(frontend->_wndVarHgtRateScale, 0.0f, 1.0f) * fabsF(hgtRate)));
 	        if (!tasDataDelayed.allowFusion) {
 	            // Allow wind states to recover faster when using sideslip fusion with a failed airspeed sesnor
+                // 当使用具有失效空速的侧滑融合时，允许风状态更快地恢复
 	            windVelVar *= 10.0f;
 	        }
 	        for (uint8_t i=12; i<=13; i++) processNoiseVariance[i] = windVelVar;
@@ -1132,6 +1178,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
     }
 
     // set variables used to calculate covariance growth
+    // 用于计算协方差增长的集合变量
     dvx = imuDataDelayed.delVel.x;
     dvy = imuDataDelayed.delVel.y;
     dvz = imuDataDelayed.delVel.z;
@@ -1155,6 +1202,9 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
         // vector defining the variance of the angular alignment uncertainty. Convert he varaince vector
         // to a matrix and rotate into body frame. Use the exisiting gyro error propagation mechanism to
         // propagate the body frame angular uncertainty variances.
+        // 处理特殊情况，在这种情况下，我们使用定义角对准不确定性方差的地球坐标系向量初始化四元数协变量。
+        // 将变容矢量转换为矩阵并旋转到身体框架中。
+        // 利用现有的陀螺误差传播机制来传播机身角不确定度方差。
         const Vector3F &rotVarVec = *rotVarVecPtr;
         Matrix3F R_ef = Matrix3F (
             rotVarVec.x, 0.0f, 0.0f,
@@ -1181,10 +1231,12 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
             const uint8_t index = stateIndex - 13;
 
             // Don't attempt learning of IMU delta velocty bias if on ground and not aligned with the gravity vector
+            // 如果在地面上且未与重力矢量对齐，则不要尝试学习IMU Δ速度偏差
             const bool is_bias_observable = (fabsF(prevTnb[index][2]) > 0.8f) || !onGround;
 
             if (!is_bias_observable && !dvelBiasAxisInhibit[index]) {
                 // store variances to be reinstated wben learning can commence later
+                // 稍后可以开始学习时，将恢复存储的方差
                 dvelBiasAxisVarPrev[index] = P[stateIndex][stateIndex];
                 dvelBiasAxisInhibit[index] = true;
             } else if (is_bias_observable && dvelBiasAxisInhibit[index]) {
@@ -1196,8 +1248,11 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     // calculate the predicted covariance due to inertial sensor error propagation
     // we calculate the lower diagonal and copy to take advantage of symmetry
+    // 计算惯性传感器误差传播引起的预测协方差
+    // 我们计算下对角线并复制以利用对称性
 
     // intermediate calculations
+    // 中间计算
     const ftype PS0 = sq(q1);
     const ftype PS1 = 0.25F*daxVar;
     const ftype PS2 = sq(q2);
@@ -1436,10 +1491,13 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
     if (quatCovResetOnly) {
         // covariance matrix is symmetrical, so copy diagonals and copy lower half in nextP
         // to lower and upper half in P
+        // 协方差矩阵是对称的，所以复制对角线并将nextP中的下半部分复制到P中的上下半部分
         for (uint8_t row = 0; row <= 3; row++) {
             // copy diagonals
+            // 复制对角线
             P[row][row] = constrain_ftype(nextP[row][row], 0.0f, 1.0f);
             // copy off diagonals
+            // 复制偏离对角线
             for (uint8_t column = 0 ; column < row; column++) {
                 P[row][column] = P[column][row] = nextP[column][row];
             }
@@ -1752,6 +1810,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
     }
 
     // add the general state process noise variances
+    // 添加一般状态过程噪声方差
     if (stateIndexLim > 9) {
         for (uint8_t i=10; i<=stateIndexLim; i++) {
             nextP[i][i] = nextP[i][i] + processNoiseVariance[i-10];
@@ -1760,6 +1819,7 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     // inactive delta velocity bias states have all covariances zeroed to prevent
     // interacton with other states
+    // 非活动Δ速度偏差状态的所有协方差均为零，以防止与其他状态相互作用
     if (!inhibitDelVelBiasStates) {
         for (uint8_t index=0; index<3; index++) {
             const uint8_t stateIndex = index + 13;
@@ -1774,6 +1834,8 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
     // growth by setting the predicted to the previous values
     // This prevent an ill conditioned matrix from occurring for long periods
     // without GPS
+    // 如果总位置方差超过1e4（100m），则通过将预测值设置为以前的值来停止协方差增长。
+    // 这可以防止在没有GPS的情况下长时间出现病态矩阵
     if ((P[7][7] + P[8][8]) > 1e4f) {
         for (uint8_t i=7; i<=8; i++)
         {
@@ -1787,16 +1849,20 @@ void NavEKF3_core::CovariancePrediction(Vector3F *rotVarVecPtr)
 
     // covariance matrix is symmetrical, so copy diagonals and copy lower half in nextP
     // to lower and upper half in P
+    // 协方差矩阵是对称的，所以复制对角线并将nextP中的下半部分复制到P中的上下半部分
     for (uint8_t row = 0; row <= stateIndexLim; row++) {
         // copy diagonals
+        // 复制对角线
         P[row][row] = nextP[row][row];
         // copy off diagonals
+        // 复制偏离对角线
         for (uint8_t column = 0 ; column < row; column++) {
             P[row][column] = P[column][row] = nextP[column][row];
         }
     }
 
     // constrain values to prevent ill-conditioning
+    // 约束值以防止条件不良
     ConstrainVariances();
 
     if (vertVelVarClipCounter > 0) {

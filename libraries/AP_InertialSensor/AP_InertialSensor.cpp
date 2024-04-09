@@ -1731,12 +1731,15 @@ void AP_InertialSensor::update(void)
 {
     // during initialisation update() may be called without
     // wait_for_sample(), and a wait is implied
+    // 在初始化过程中，可以在不使用wait_for_sample（）的情况下调用update（），这意味着等待
     wait_for_sample();
 
         for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
             // mark sensors unhealthy and let update() in each backend
             // mark them healthy via _publish_gyro() and
             // _publish_accel()
+            // 将传感器标记为不健康，并在每个后端允许update（）
+            // 通过_publish_gyro（）和_publish_accel（）将它们标记为健康
             _gyro_healthy[i] = false;
             _accel_healthy[i] = false;
             _delta_velocity_valid[i] = false;
@@ -1770,6 +1773,8 @@ void AP_InertialSensor::update(void)
 
         // adjust health status if a sensor has a non-zero error count
         // but another sensor doesn't.
+        // 如果传感器的错误计数为非零，则调整健康状况
+        // 但另一个传感器没有。
         bool have_zero_accel_error_count = false;
         bool have_zero_gyro_error_count = false;
         for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
@@ -1784,15 +1789,18 @@ void AP_InertialSensor::update(void)
         for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
             if (_gyro_healthy[i] && _gyro_error_count[i] > _gyro_startup_error_count[i] && have_zero_gyro_error_count) {
                 // we prefer not to use a gyro that has had errors
+                // 我们不喜欢使用有误差的陀螺仪
                 _gyro_healthy[i] = false;
             }
             if (_accel_healthy[i] && _accel_error_count[i] > _accel_startup_error_count[i] && have_zero_accel_error_count) {
                 // we prefer not to use a accel that has had errors
+                // 我们不希望使用出现错误的accel
                 _accel_healthy[i] = false;
             }
         }
 
         // set primary to first healthy accel and gyro
+        // 将primary设置为第一个健康的加速度和陀螺仪
         for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
             if (_gyro_healthy[i] && _use(i)) {
                 _primary_gyro = i;
