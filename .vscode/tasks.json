@@ -4,9 +4,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "config",
+            "label": "config-fmuv3",
             "type": "shell",
             "command": "./waf configure --board fmuv3 --debug",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "config-CubeOrange",
+            "type": "shell",
+            "command": "./waf configure --board CubeOrangePlus --debug",
             "args": [],
             "problemMatcher": [],
         },

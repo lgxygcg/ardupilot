@@ -1481,6 +1481,7 @@ bool AP_Param::set_object_value(const void *object_pointer,
 
 // load default values for all scalars in a sketch. This does not
 // recurse into sub-objects
+// 加载草图中所有标量的默认值。这不会递归到子对象中
 void AP_Param::setup_sketch_defaults(void)
 {
     setup();
