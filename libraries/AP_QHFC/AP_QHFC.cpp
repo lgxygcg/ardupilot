@@ -189,6 +189,60 @@ bool AP_QHFC::update()
 }
 
 //////
+int16_t AP_QHFC::CalFCTemperature(uint8_t Ch)
+{
+  int16_t temp1,temp2;
+
+  switch(Ch)
+  {
+    case 0:
+      temp1 = FCStatus.FC1Temp1;
+      temp2 = FCStatus.FC1Temp2;
+      break;
+    case 1:
+      temp1 = FCStatus.FC2Temp1;
+      temp2 = FCStatus.FC2Temp2;
+      break;
+    case 2:
+      temp1 = FCStatus.FC3Temp1;
+      temp2 = FCStatus.FC3Temp2;
+      break;
+    case 3:
+      temp1 = FCStatus.FC4Temp1;
+      temp2 = FCStatus.FC4Temp2;
+      break;
+    default:
+      return QHFC_TEMP_MAX;
+  }
+
+  if((temp1 > QHFC_TEMP_MAX) || (temp1 < QHFC_TEMP_MIN))return QHFC_TEMP_MAX;
+  if((temp2 > QHFC_TEMP_MAX) || (temp2 < QHFC_TEMP_MIN))return QHFC_TEMP_MAX;
+
+  if(temp1 >= temp2)
+    return temp1;
+  else
+    return temp2;
+}
+void AP_QHFC::CalFCVoltCur(uint16_t &Volt,uint16_t &Cur)
+{
+  uint16_t v = FCStatus.FC1Volt;
+  uint16_t i;
+  uint32_t p;
+
+  if(FCStatus.FC2Volt > v)v = FCStatus.FC2Volt;
+  if(FCStatus.FC3Volt > v)v = FCStatus.FC3Volt;
+  if(FCStatus.FC4Volt > v)v = FCStatus.FC4Volt;
+
+  p = (uint32_t)FCStatus.FC1Volt * FCStatus.FC1Current;
+  p += (uint32_t)FCStatus.FC2Volt * FCStatus.FC2Current;
+  p += (uint32_t)FCStatus.FC3Volt * FCStatus.FC3Current;
+  p += (uint32_t)FCStatus.FC4Volt * FCStatus.FC4Current;
+
+  i = p / v;
+
+  Volt = v;
+  Cur = i;
+}
 //
 //
 // ******************发送氢航握手包

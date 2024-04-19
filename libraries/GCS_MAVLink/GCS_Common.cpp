@@ -2765,16 +2765,31 @@ MAV_STATE GCS_MAVLINK::system_status() const
 //<-- ------------------------------------------------------------------- ->//
 void GCS_MAVLINK::send_mav_message_QH_FCStatus(void)
 {
-    uint32_t Status = 0;
-    int16_t FCTemperature[4] = {1,2,3,4};
-    int16_t Press = 10;
-    int16_t FCVoltage = 54;
-    int16_t FCCurrent = 2;
-    int16_t LIVoltage = 48;
-    int16_t LICurrent = 1;
-    int16_t AmbTemperature = 28;
-    int8_t AmbHumidity = 20;
-    int8_t AmbControlStatus = 1;
+    AP_QHFC *fc = AP_QHFC::get_singleton();
+
+    uint32_t Status;
+    int16_t FCTemperature[4];
+    uint16_t Press;
+    uint16_t FCVoltage;
+    uint16_t FCCurrent;
+    uint16_t LIVoltage;
+    int16_t LICurrent;
+    int16_t AmbTemperature;
+    uint8_t AmbHumidity;
+    uint8_t AmbControlStatus;
+
+    Status = fc->FCStatus.FCStatus;
+    FCTemperature[0] = fc->CalFCTemperature(0);
+    FCTemperature[1] = fc->CalFCTemperature(1);
+    FCTemperature[2] = fc->CalFCTemperature(2);
+    FCTemperature[3] = fc->CalFCTemperature(3);
+    Press = fc->FCStatus.H2PressureH;
+    fc->CalFCVoltCur(FCVoltage,FCCurrent);
+    LIVoltage = fc->FCStatus.LiVolt;
+    LICurrent = fc->FCStatus.LiCurrent;
+    AmbTemperature = fc->FCStatus.AmbTemperature;
+    AmbHumidity = fc->FCStatus.AmbHumidity;
+    AmbControlStatus = fc->FCStatus.AmbControlStatus;
 
     mavlink_msg_qh_fcstatus_send(chan, Status, FCTemperature, Press, FCVoltage, FCCurrent, LIVoltage, LICurrent, AmbTemperature, AmbHumidity, AmbControlStatus);
 }

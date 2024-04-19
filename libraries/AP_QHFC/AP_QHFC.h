@@ -27,6 +27,60 @@
 #define QHFC_CMD_PARAM_ON       (0x55)
 #define QHFC_CMD_PARAM_OFF      (0xAA)
 //
+#define QHFC_TEMP_MIN           (-600)      //-600 -> -60degree
+#define QHFC_TEMP_MAX           (3000)      //3000 -> 300degree
+typedef struct PACKED _bagQH_FCStatus{
+    uint32_t SystemTick;
+
+    uint16_t FCStatus;
+
+    uint16_t FC1Volt;
+    uint16_t FC1Current;
+    int16_t FC1Temp1;
+    int16_t FC1Temp2;
+    uint16_t FC1Error;
+    uint16_t FC1FanDuty;
+    uint16_t FC1FanSpeed1;
+    uint16_t FC1FanSpeed2;
+
+    uint16_t FC2Volt;
+    uint16_t FC2Current;
+    int16_t FC2Temp1;
+    int16_t FC2Temp2;
+    uint16_t FC2Error;
+    uint16_t FC2FanDuty;
+    uint16_t FC2FanSpeed1;
+    uint16_t FC2FanSpeed2;
+
+    uint16_t FC3Volt;
+    uint16_t FC3Current;
+    int16_t FC3Temp1;
+    int16_t FC3Temp2;
+    uint16_t FC3Error;
+    uint16_t FC3FanDuty;
+    uint16_t FC3FanSpeed1;
+    uint16_t FC3FanSpeed2;
+
+    uint16_t FC4Volt;
+    uint16_t FC4Current;
+    int16_t FC4Temp1;
+    int16_t FC4Temp2;
+    uint16_t FC4Error;
+    uint16_t FC4FanDuty;
+    uint16_t FC4FanSpeed1;
+    uint16_t FC4FanSpeed2;
+
+    uint16_t LiVolt;
+    int16_t LiCurrent;
+    uint16_t LiError;
+
+    uint16_t H2PressureH;
+    uint16_t H2PressureL;
+
+    int16_t AmbTemperature;
+    int8_t AmbHumidity;
+    int8_t AmbControlStatus;
+}QH_FCStatus;
 //
 class AP_QHFC_Parameters;
  
@@ -56,6 +110,9 @@ public:
   //  float qh_off;
     float qh_on;
 
+    int16_t CalFCTemperature(uint8_t Ch);
+    void CalFCVoltCur(uint16_t &Volt,uint16_t &Cur);
+
     //<-- ------------------------------------------------------------------- ->//
     uint16_t OnOff_Cmd;
     //<-- ------------------------------------------------------------------- ->//
@@ -77,6 +134,7 @@ public:
     uint8_t chal;
     uint16_t QHFC_crc;
     
+    QH_FCStatus FCStatus;
 ////*************临时数据要删除****************
 
 
