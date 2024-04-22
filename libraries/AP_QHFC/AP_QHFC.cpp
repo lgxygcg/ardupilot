@@ -74,118 +74,132 @@ void AP_QHFC::init(const AP_SerialManager& serial_manager)
 
 bool AP_QHFC::update()
 {
-    if (_port == NULL) 
-        return false;   
+  if (_port == NULL) 
+    return false;   
 
-       int16_t numc = _port->available();
+  int16_t numc = _port->available();
       
-        data = 0;
+  data = 0;
 
-   for(int16_t i = 0; i < numc; i++){
-          data =_port->read();
-        switch(_step) {
-        case 0:
-           recv_vnt = 0;
-           recv_duf[recv_vnt] = data;
-           if(recv_duf[0] == (0x01)){
-             recv_vnt ++;
-             _step = 1;
-               } 
-             break;
-            
-        case 1:
-           recv_duf[recv_vnt] = data;          
-           if(recv_duf[1] == (0x03)){    //判断数据包
-           recv_vnt ++;
-              _step = 2;
-               } 
-            else if (recv_duf[1] == (0x06)){       //判断是不是控制指令数据   
-           recv_vnt ++;
-              _step = 4;
-             }
-             else{
-             _step = 0;
-              } 
-             break;
-//******************状态数据包***************
-        case 2:        
-           recv_duf[recv_vnt] = data;          
-          if(recv_duf[2] == (0x26)){
-           recv_vnt ++;
-              _step = 3;
-               } 
-             else{
-             _step = 0;
-              } 
-             break;
-             
-        case 3:
-            recv_duf[recv_vnt] = data;
-            recv_vnt ++;
-          if(recv_vnt == 43){
-              _step = 0;
-              QHFC_crc = calc_crc_modbus(recv_duf, recv_vnt - 2);
-              crch = QHFC_crc >> 8;
-              chal = QHFC_crc & 0xFF;
-
-            if((recv_duf[recv_vnt - 2] == chal) && (recv_duf[recv_vnt - 1] == crch)) {
-               _FCV = (recv_duf[11]<<8) | recv_duf[12];   //两数值合并
-               _FCA = (recv_duf[13]<<8) | recv_duf[14]; 
-               _FCWENDU = (recv_duf[15]<<8) | recv_duf[16];
-               _FCW = (recv_duf[17]<<8) | recv_duf[18]; 
-               _FCDCV = (recv_duf[19]<<8) | recv_duf[20];
-               _FCDCA = (recv_duf[21]<<8) | recv_duf[22];
-               _FCKW = (recv_duf[27]<<8) | recv_duf[28];
-               _FCMPA = (recv_duf[31]<<8) | recv_duf[32];
-
-               last_frame_ms = AP_HAL::millis();
-               gcs().send_message(MSG_QH_FCSTATUS);
-               //<-- ------------------------------------------------------------------- ->//
-                //Log_Write_qhfc();
-                //<-- ------------------------------------------------------------------- ->//
-               return true;
-               }
-             else{
-               _step = 0;
-                break;
-               }      
-             }
-          else{
-             _step = 3;
-              } 
-             break;
-//******************** 控制指令数据***********
-        case 4:
-            recv_duf[recv_vnt] = data;
-            recv_vnt ++;
-          if(recv_vnt == 8){
-              _step = 0;
-              QHFC_crc = calc_crc_modbus(recv_duf, recv_vnt - 2);
-              crch = QHFC_crc >> 8;
-              chal = QHFC_crc & 0xFF;
-              if((recv_duf[recv_vnt - 2] == chal) && (recv_duf[recv_vnt - 1] == crch)) {
-                qh_onoff = recv_duf[5];
-
-                 last_frame_ms = AP_HAL::millis();
-                 gcs().send_message(MSG_QH_FCSTATUS);
-                 //<-- ------------------------------------------------------------------- ->//
-                 //Log_Write_qhfc();
-                 //<-- ------------------------------------------------------------------- ->//
-                 return true;
-               }
-              else{
-                  _step = 0;
-                  break;
-                  }
-              }
-           else{
-             _step = 4;
-              } 
-             break;       
+  for(int16_t i = 0; i < numc; i++)
+  {
+    data =_port->read();
+    switch(_step)
+    {
+      case 0:
+        recv_vnt = 0;
+        recv_duf[recv_vnt] = data;
+        if(recv_duf[0] == (0x01))
+        {
+          recv_vnt ++;
+          _step = 1;
         }
-    }
+        break;
+      case 1:
+        recv_duf[recv_vnt] = data;          
+        if(recv_duf[1] == (0x03))    //判断数据包
+        {
+          recv_vnt ++;
+          _step = 2;
+        }
+        else if (recv_duf[1] == (0x06))       //判断是不是控制指令数据
+        {
+          recv_vnt ++;
+          _step = 4;
+        }
+        else
+        {
+          _step = 0;
+        }
+        break;
+//******************状态数据包***************
+      case 2:        
+        recv_duf[recv_vnt] = data;          
+        if(recv_duf[2] == (0x26))
+        {
+          recv_vnt ++;
+          _step = 3;
+        }
+        else
+        {
+          _step = 0;
+        }
+        break;
+             
+      case 3:
+        recv_duf[recv_vnt] = data;
+        recv_vnt ++;
+        if(recv_vnt == 43)
+        {
+          _step = 0;
+          QHFC_crc = calc_crc_modbus(recv_duf, recv_vnt - 2);
+          crch = QHFC_crc >> 8;
+          chal = QHFC_crc & 0xFF;
 
-    return false;
+          if((recv_duf[recv_vnt - 2] == chal) && (recv_duf[recv_vnt - 1] == crch))
+          {
+            _FCV = (recv_duf[11]<<8) | recv_duf[12];   //两数值合并
+            _FCA = (recv_duf[13]<<8) | recv_duf[14]; 
+            _FCWENDU = (recv_duf[15]<<8) | recv_duf[16];
+            _FCW = (recv_duf[17]<<8) | recv_duf[18]; 
+            _FCDCV = (recv_duf[19]<<8) | recv_duf[20];
+            _FCDCA = (recv_duf[21]<<8) | recv_duf[22];
+            _FCKW = (recv_duf[27]<<8) | recv_duf[28];
+            _FCMPA = (recv_duf[31]<<8) | recv_duf[32];
+
+            last_frame_ms = AP_HAL::millis();
+            gcs().send_message(MSG_QH_FCSTATUS);
+            //<-- ------------------------------------------------------------------- ->//
+            //Log_Write_qhfc();
+            //<-- ------------------------------------------------------------------- ->//
+            return true;
+          }
+          else
+          {
+            _step = 0;
+            break;
+          }
+        }
+        else
+        {
+          _step = 3;
+        }
+        break;
+//******************** 控制指令数据***********
+      case 4:
+        recv_duf[recv_vnt] = data;
+        recv_vnt ++;
+        if(recv_vnt == 8)
+        {
+          _step = 0;
+          QHFC_crc = calc_crc_modbus(recv_duf, recv_vnt - 2);
+          crch = QHFC_crc >> 8;
+          chal = QHFC_crc & 0xFF;
+          if((recv_duf[recv_vnt - 2] == chal) && (recv_duf[recv_vnt - 1] == crch))
+          {
+            qh_onoff = recv_duf[5];
+
+            last_frame_ms = AP_HAL::millis();
+            gcs().send_message(MSG_QH_FCSTATUS);
+            //<-- ------------------------------------------------------------------- ->//
+            //Log_Write_qhfc();
+            //<-- ------------------------------------------------------------------- ->//
+            return true;
+          }
+          else
+          {
+            _step = 0;
+            break;
+          }
+        }
+        else
+        {
+          _step = 4;
+        }
+        break;       
+    }
+  }
+  return false;
 }
 
 //////
