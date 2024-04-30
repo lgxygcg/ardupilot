@@ -29,6 +29,8 @@
 //
 #define QHFC_TEMP_MIN           (-600)      //-600 -> -60degree
 #define QHFC_TEMP_MAX           (3000)      //3000 -> 300degree
+
+#define QHFC_RECVBUF_SIZE       (64)
 typedef struct PACKED _bagQH_FCStatus{
     uint32_t SystemTick;
 
@@ -81,6 +83,17 @@ typedef struct PACKED _bagQH_FCStatus{
     int8_t AmbHumidity;
     int8_t AmbControlStatus;
 }QH_FCStatus;
+
+typedef struct PACKED _bagQH_FCStatusOld{
+    uint32_t _FCV;
+    uint32_t _FCA;
+    uint32_t _FCWENDU;
+    uint32_t _FCW;
+    uint32_t _FCDCV;
+    uint32_t _FCDCA;
+    uint32_t _FCKW;
+    uint32_t _FCMPA;
+}QH_FCStatusOld;
 //
 class AP_QHFC_Parameters;
  
@@ -108,7 +121,7 @@ public:
    // float qh_kaiguan;
     float qh_onoff;
   //  float qh_off;
-    float qh_on;
+    //float qh_on;
 
     int16_t CalFCTemperature(uint8_t Ch);
     void CalFCVoltCur(uint16_t &Volt,uint16_t &Cur);
@@ -118,15 +131,8 @@ public:
     //<-- ------------------------------------------------------------------- ->//
 
     uint32_t last_frame_ms;
-    uint32_t _last_frame_ms;
-    uint32_t _FCV;
-    uint32_t _FCA;
-    uint32_t _FCMPA;
-    uint32_t _FCWENDU;
-    uint32_t _FCKW;
-    uint32_t _FCDCA;
-    uint32_t _FCDCV;
-    uint32_t _FCW;
+    uint32_t last_send_frame_ms;
+//
     uint32_t FCkai;
     uint32_t FCguan;
     uint8_t _D0;
@@ -135,6 +141,7 @@ public:
     uint16_t QHFC_crc;
     
     QH_FCStatus FCStatus;
+    QH_FCStatusOld FCStatusOld;
 ////*************临时数据要删除****************
 
 
@@ -145,6 +152,7 @@ private:
     static AP_QHFC *_singleton;   ////后加程序
      
     AP_HAL::UARTDriver *_port;    //读取 ->read
+    AP_SerialManager::SerialProtocol protocol;
     void send();
     void tick(void);
     //与发送数据的螺母和螺栓相关的方法
@@ -152,9 +160,10 @@ private:
     void send_uint16();
 
     void send_woshoubao();
+    void packedReceived(uint8_t *buf,uint16_t len);
     //
-         uint8_t recv_duf[43];
-         uint8_t recv_vnt;
+         uint8_t recv_buf[QHFC_RECVBUF_SIZE];
+         uint8_t recv_cnt;
          uint8_t data;
          uint8_t _step;
  struct {

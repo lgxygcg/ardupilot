@@ -557,3 +557,4 @@ void AP_Logger::Write_PSCD(float pos_target, float pos, float vel_desired, float
 {
     Write_PSCx(LOG_PSCD_MSG, pos_target, pos, vel_desired, vel_target, vel, accel_desired, accel_target, accel);
 }
+

@@ -257,7 +257,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100, 171),
 #endif
     //<-- ------------------------------------------------------------------- ->//
-    SCHED_TASK(update_QHFC,          200,   100,  174),
+    SCHED_TASK(update_QHFC,          10,   50,  174),
     //<-- ------------------------------------------------------------------- ->//
 };
 
@@ -575,6 +575,8 @@ void Copter::ten_hz_logging_loop()
         g2.winch.write_log();
     }
 #endif
+    int16_t temp[4] = {10,11,12,13};
+    log_Write_QHFCD(1,temp,3,4,5,6,7,8,9,10);
 }
 
 // twentyfive_hz_logging - should be run at 25hz

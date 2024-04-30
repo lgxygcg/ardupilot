@@ -170,7 +170,8 @@ public:
         SerialProtocol_MAVLinkHL = 43,
         SerialProtocol_Tramp = 44,
         //<-- ------------------------------------------------------------------- ->//
-        SerialProtocol_QHFC = 66,                      //定义氢航科技串口通信数据类型为66
+        SerialProtocol_QHFC_V1 = 66,                      //定义氢航科技串口通信数据类型为66
+        SerialProtocol_QHFC_V2 = 67,
         //<-- ------------------------------------------------------------------- ->//
         SerialProtocol_NumProtocols                    // must be the last value
     };

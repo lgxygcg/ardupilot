@@ -301,6 +301,25 @@ void Copter::Log_Write_SysID_Setup(uint8_t systemID_axis, float waveform_magnitu
 #endif
 }
 
+void Copter::log_Write_QHFCD(uint32_t Status,int16_t FCT[4],uint16_t FCV,uint16_t FCC,uint16_t LIV,int16_t LIC,uint16_t Press,int16_t AmbT,uint8_t AmbH,uint8_t AmbC)
+{
+    const struct log_QHFC pkt{
+        LOG_PACKET_HEADER_INIT(LOG_QHFC_DATA_MSG),
+            time_us             : AP_HAL::micros64(),
+            Status              : Status,
+            FCTemperature       : {FCT[0],FCT[1],FCT[2],FCT[3]},
+            FCVoltage           : FCV,
+            FCCurrent           : FCC,
+            LIVoltage           : LIV,
+            LICurrent           : LIC,
+            Press               : Press,
+            AmbTemperature      : AmbT,
+            AmbHumidity         : AmbH,
+            AmbControlStatus    : AmbC
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 #if FRAME_CONFIG == HELI_FRAME
 struct PACKED log_Heli {
     LOG_PACKET_HEADER;

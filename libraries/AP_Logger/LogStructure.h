@@ -687,6 +687,21 @@ struct PACKED log_VER {
     uint8_t build_type;
 };
 
+struct PACKED log_QHFC{
+  LOG_PACKET_HEADER;
+  uint64_t time_us;
+  uint32_t Status;
+  int16_t FCTemperature[4];
+  uint16_t FCVoltage;
+  uint16_t FCCurrent;
+  uint16_t LIVoltage;
+  int16_t LICurrent;
+  uint16_t Press;
+  int16_t AmbTemperature;
+  uint8_t AmbHumidity;
+  uint8_t AmbControlStatus;
+};
+
 
 // FMT messages define all message formats other than FMT
 // UNIT messages define units which can be referenced by FMTU messages
@@ -1347,7 +1362,9 @@ LOG_STRUCTURE_FROM_AIS \
     { LOG_VER_MSG, sizeof(log_VER), \
       "VER",   "QBHBBBBIZHB", "TimeUS,BT,BST,Maj,Min,Pat,FWT,GH,FWS,APJ,BU", "s----------", "F----------", false }, \
     { LOG_MOTBATT_MSG, sizeof(log_MotBatt), \
-      "MOTB", "QfffffB",  "TimeUS,LiftMax,BatVolt,ThLimit,ThrAvMx,ThrOut,FailFlags", "s------", "F------" , true }
+      "MOTB", "QfffffB",  "TimeUS,LiftMax,BatVolt,ThLimit,ThrAvMx,ThrOut,FailFlags", "s------", "F------" , true }, \
+    { LOG_QHFC_DATA_MSG, sizeof(log_QHFC), \
+      "QHFC", "QIhhhhHHHhHhBB",  "TimeUS,Status,FCT1,FCT2,FCT3,FCT4,FCV,FCC,LIV,LIC,Press,AmbT,AmbH,AmbC", "s-OOOOVAVAPO%-", "F-AAAAAAAABA--" , true }
 
 // message types 0 to 63 reserved for vehicle specific use
 
@@ -1434,6 +1451,7 @@ enum LogMessages : uint8_t {
     LOG_RCOUT2_MSG,
     LOG_RCOUT3_MSG,
     LOG_IDS_FROM_FENCE,
+    LOG_QHFC_DATA_MSG,
 
     _LOG_LAST_MSG_
 };

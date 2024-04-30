@@ -13,7 +13,7 @@
         {
             "label": "config-CubeOrange",
             "type": "shell",
-            "command": "./waf configure --board CubeOrangePlus --debug",
+            "command": "./waf configure --board CubeOrange --debug",
             "args": [],
             "problemMatcher": [],
         },
