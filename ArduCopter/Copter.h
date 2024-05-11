@@ -852,7 +852,7 @@ private:
     void Log_Write_Vehicle_Startup_Messages();
     void log_init(void);
 
-    void log_Write_QHFCD(uint32_t Status,int16_t FCT[4],uint16_t FCV,uint16_t FCC,uint16_t LIV,int16_t LIC,uint16_t Press,int16_t AmbT,uint8_t AmbH,uint8_t AmbC);
+    void log_Write_QHFCD(uint32_t Stat,int16_t FT[4],uint16_t FV,uint16_t FC,uint16_t LV,int16_t LC,uint16_t Press,int16_t AmbT,uint8_t AmbH,uint8_t AmbC);
 
     // mode.cpp
     bool set_mode(Mode::Number mode, ModeReason reason);

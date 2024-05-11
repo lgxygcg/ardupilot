@@ -501,10 +501,35 @@ void Copter::update_batt_compass(void)
 //<-- ------------------------------------------------------------------- ->//
 void Copter::update_QHFC(void)
 {
+    FCFailsafeAction action;
+
      //(qhfc.update());
      if(qhfc.update()){
         //Log_Write_qhfc();
     }
+
+        //get FC failsafe
+    action = qhfc.handle_FC_failsafe(motors->armed());
+    switch(action)
+    {
+        case FCFailsafeAction::NONE:
+            break;
+        case FCFailsafeAction::LAND:
+            do_failsafe_action(FailsafeAction::LAND, ModeReason::BATTERY_FAILSAFE);
+            break;
+        case FCFailsafeAction::RTL:
+            do_failsafe_action(FailsafeAction::RTL, ModeReason::BATTERY_FAILSAFE);
+            break;
+        case FCFailsafeAction::SMARTRTL:
+            do_failsafe_action(FailsafeAction::SMARTRTL, ModeReason::BATTERY_FAILSAFE);
+            break;
+        default:
+            break;
+    }
+    //is_taking_off()
+    //is_landing()
+    //is_disarmed_or_landed()
+    //AP_Arming::is_armed()
 }
 //<-- ------------------------------------------------------------------- ->//
 
@@ -575,8 +600,8 @@ void Copter::ten_hz_logging_loop()
         g2.winch.write_log();
     }
 #endif
-    int16_t temp[4] = {10,11,12,13};
-    log_Write_QHFCD(1,temp,3,4,5,6,7,8,9,10);
+    //int16_t temp[4] = {10,11,12,13};
+    //log_Write_QHFCD(1,temp,3,4,5,6,7,8,9,10);
 }
 
 // twentyfive_hz_logging - should be run at 25hz

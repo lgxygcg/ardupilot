@@ -31,6 +31,13 @@
 #define QHFC_TEMP_MAX           (3000)      //3000 -> 300degree
 
 #define QHFC_RECVBUF_SIZE       (64)
+
+enum class FCFailsafeAction : uint8_t {
+        NONE               = 0,
+        LAND               = 1,
+        RTL                = 2,
+        SMARTRTL           = 3
+    };
 typedef struct PACKED _bagQH_FCStatus{
     uint32_t SystemTick;
 
@@ -82,6 +89,9 @@ typedef struct PACKED _bagQH_FCStatus{
     int16_t AmbTemperature;
     int8_t AmbHumidity;
     int8_t AmbControlStatus;
+
+    uint16_t Warning;
+    uint16_t Fault;
 }QH_FCStatus;
 
 typedef struct PACKED _bagQH_FCStatusOld{
@@ -111,6 +121,7 @@ public:
     static AP_QHFC *get_singleton(void) {        //后加程序
         return _singleton;                       //后加程序
     }
+
 //初始化-执行所需的初始化
     void init(const AP_SerialManager& serial_manager);
     bool update(void);
@@ -119,12 +130,17 @@ public:
     bool qhsc(void);
     
    // float qh_kaiguan;
-    float qh_onoff;
+    uint8_t qh_onoff;
   //  float qh_off;
     //float qh_on;
+    uint32_t debug_cnt;
 
     int16_t CalFCTemperature(uint8_t Ch);
     void CalFCVoltCur(uint16_t &Volt,uint16_t &Cur);
+
+    bool is_armed_old;
+    FCFailsafeAction CurAction;
+    FCFailsafeAction handle_FC_failsafe(bool is_armed);
 
     //<-- ------------------------------------------------------------------- ->//
     uint16_t OnOff_Cmd;

@@ -1362,9 +1362,9 @@ LOG_STRUCTURE_FROM_AIS \
     { LOG_VER_MSG, sizeof(log_VER), \
       "VER",   "QBHBBBBIZHB", "TimeUS,BT,BST,Maj,Min,Pat,FWT,GH,FWS,APJ,BU", "s----------", "F----------", false }, \
     { LOG_MOTBATT_MSG, sizeof(log_MotBatt), \
-      "MOTB", "QfffffB",  "TimeUS,LiftMax,BatVolt,ThLimit,ThrAvMx,ThrOut,FailFlags", "s------", "F------" , true }, \
-    { LOG_QHFC_DATA_MSG, sizeof(log_QHFC), \
-      "QHFC", "QIhhhhHHHhHhBB",  "TimeUS,Status,FCT1,FCT2,FCT3,FCT4,FCV,FCC,LIV,LIC,Press,AmbT,AmbH,AmbC", "s-OOOOVAVAPO%-", "F-AAAAAAAABA--" , true }
+      "MOTB", "QfffffB",  "TimeUS,LiftMax,BatVolt,ThLimit,ThrAvMx,ThrOut,FailFlags", "s------", "F------" , true }
+    //{ LOG_QHFC_DATA_MSG, sizeof(log_QHFC)
+    //   "QHFC", "QIhhhhHHHhHhBB",  "TimeUS,Stat,FT1,FT2,FT3,FT4,FV,FC,LV,LC,Press,AmbT,AmbH,AmbC", "s-OOOOVAVAPO%-", "F-AAAAAAAABA--" , true }
 
 // message types 0 to 63 reserved for vehicle specific use
 
@@ -1451,7 +1451,7 @@ enum LogMessages : uint8_t {
     LOG_RCOUT2_MSG,
     LOG_RCOUT3_MSG,
     LOG_IDS_FROM_FENCE,
-    LOG_QHFC_DATA_MSG,
+    //LOG_QHFC_DATA_MSG,
 
     _LOG_LAST_MSG_
 };

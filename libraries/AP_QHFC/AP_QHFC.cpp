@@ -55,6 +55,8 @@ AP_QHFC::AP_QHFC(void)
 
     //<-- ------------------------------------------------------------------- ->//
     OnOff_Cmd = 0;
+    is_armed_old = false;
+    debug_cnt = 0;
     //<-- ------------------------------------------------------------------- ->//
 }
 
@@ -147,6 +149,8 @@ void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)
         FCStatus.LiVolt = (buf[19]<<8) | buf[20];
         FCStatus.LiCurrent = (buf[21]<<8) | buf[22];
         FCStatus.H2PressureH = (buf[31]<<8) | buf[32];
+        FCStatus.Warning = (buf[41]<<8) | buf[42];
+        FCStatus.Fault = (buf[43]<<8) | buf[44];
         #else
         FCStatusOld._FCV = (buf[11]<<8) | buf[12];   //两数值合并
         FCStatusOld._FCA = (buf[13]<<8) | buf[14]; 
@@ -363,6 +367,68 @@ void AP_QHFC::tick(void)// 定时器函数
   return ;
      //}
 }   //uint8_t checksum =0;
+
+#define DEBUG_FC_FAULTSAFE      (1)
+
+FCFailsafeAction AP_QHFC::handle_FC_failsafe(bool is_armed)
+{
+  //FCFailsafeAction Action = FCFailsafeAction::NONE;
+
+  if(is_armed == true)
+  {
+    if(is_armed_old == false)
+    {
+      CurAction = FCFailsafeAction::NONE;
+      #if DEBUG_FC_FAULTSAFE
+      debug_cnt = 0;
+      #endif
+    }
+    else
+    {
+      #if DEBUG_FC_FAULTSAFE
+      debug_cnt++;
+      if(debug_cnt == 1000)
+      {
+        FCStatus.Warning = 1;
+        gcs().send_text(MAV_SEVERITY_INFO,"debug:set Warning!");
+      }
+      if(debug_cnt == 1200)
+      {
+        FCStatus.Fault = 1;
+        gcs().send_text(MAV_SEVERITY_INFO,"debug:set Fault!");
+      }
+      #endif
+    }
+  }
+  else
+  {
+    CurAction = FCFailsafeAction::NONE;
+  }
+  is_armed_old = is_armed;
+
+  //
+  if(is_armed == true)
+  {
+    if(FCStatus.Fault != 0)
+    {
+      if((CurAction == FCFailsafeAction::NONE) || (CurAction == FCFailsafeAction::SMARTRTL))
+      {
+        CurAction = FCFailsafeAction::LAND;
+        gcs().send_text(MAV_SEVERITY_ERROR,"Fault:set mode LAND!");
+      }
+    }
+    else if(FCStatus.Warning != 0)
+    {
+      if(CurAction == FCFailsafeAction::NONE)
+      {
+        CurAction = FCFailsafeAction::SMARTRTL;
+        gcs().send_text(MAV_SEVERITY_ERROR,"Fault:set mode SMARTRTL!");
+      }
+    }
+  }
+
+  return CurAction;
+}
 ///后加程序 
 ////后加的
 namespace AP 

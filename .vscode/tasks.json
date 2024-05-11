@@ -18,6 +18,13 @@
             "problemMatcher": [],
         },
         {
+            "label": "config-SITL",
+            "type": "shell",
+            "command": "./waf configure --board sitl",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
             "label": "build",
             "type": "shell",
             "command": "./waf copter",
