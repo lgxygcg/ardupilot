@@ -501,10 +501,35 @@ void Copter::update_batt_compass(void)
 //<-- ------------------------------------------------------------------- ->//
 void Copter::update_QHFC(void)
 {
+    FCFailsafeAction action;
+    
      //(qhfc.update());
      if(qhfc.update()){
         //Log_Write_qhfc();
     }
+
+    //get FC failsafe
+    action = qhfc.handle_FC_failsafe(motors->armed());
+    switch(action)
+    {
+        case FCFailsafeAction::NONE:
+            break;
+        case FCFailsafeAction::LAND:
+            do_failsafe_action(FailsafeAction::LAND, ModeReason::BATTERY_FAILSAFE);
+            break;
+        case FCFailsafeAction::RTL:
+            do_failsafe_action(FailsafeAction::RTL, ModeReason::BATTERY_FAILSAFE);
+            break;
+        case FCFailsafeAction::SMARTRTL:
+            do_failsafe_action(FailsafeAction::SMARTRTL, ModeReason::BATTERY_FAILSAFE);
+            break;
+        default:
+            break;
+    }
+    //is_taking_off()
+    //is_landing()
+    //is_disarmed_or_landed()
+    //AP_Arming::is_armed()
 }
 //<-- ------------------------------------------------------------------- ->//
 
