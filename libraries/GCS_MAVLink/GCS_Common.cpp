@@ -2779,18 +2779,19 @@ void GCS_MAVLINK::send_mav_message_QH_FCStatus(void)
     uint8_t AmbControlStatus;
 
     #if(1)
-    Status = fc->FCStatus.FCStatus;
-    FCTemperature[0] = fc->CalFCTemperature(0);
-    FCTemperature[1] = fc->CalFCTemperature(1);
-    FCTemperature[2] = fc->CalFCTemperature(2);
-    FCTemperature[3] = fc->CalFCTemperature(3);
-    Press = fc->FCStatus.H2PressureH;
-    fc->CalFCVoltCur(FCVoltage,FCCurrent);
-    LIVoltage = fc->FCStatus.LiVolt;
-    LICurrent = fc->FCStatus.LiCurrent;
-    AmbTemperature = fc->FCStatus.AmbTemperature;
-    AmbHumidity = fc->FCStatus.AmbHumidity;
-    AmbControlStatus = fc->FCStatus.AmbControlStatus;
+    Status = fc->GCStatus.FCStatus;
+    FCTemperature[0] = fc->GCStatus.FCTemperature[0];
+    FCTemperature[1] = fc->GCStatus.FCTemperature[1];
+    FCTemperature[2] = fc->GCStatus.FCTemperature[2];
+    FCTemperature[3] = fc->GCStatus.FCTemperature[3];
+    Press = fc->GCStatus.Press;
+    FCVoltage = fc->GCStatus.FCVoltage;
+    FCCurrent = fc->GCStatus.FCCurrent;
+    LIVoltage = fc->GCStatus.LIVoltage;
+    LICurrent = fc->GCStatus.LICurrent;
+    AmbTemperature = fc->GCStatus.AmbTemperature;
+    AmbHumidity = fc->GCStatus.AmbHumidity;
+    AmbControlStatus = fc->GCStatus.AmbControlStatus;
     #else
     fc->CalFCVoltCur(FCVoltage,FCCurrent);
     Status = 1;
@@ -3828,10 +3829,7 @@ void GCS_MAVLINK::handle_QH_FCControl(const mavlink_message_t &msg) const
     switch(packet.Command)
     {
         case QHFC_COMMAND_ONOFF:
-            if(packet.Param == QHFC_CMD_PARAM_ON)
-                qhfc.OnOff_Cmd = QHFC_CMD_PARAM_ON;
-            else if(packet.Param == QHFC_CMD_PARAM_OFF)
-                qhfc.OnOff_Cmd = QHFC_CMD_PARAM_OFF;
+            qhfc.Set_Cmd(packet.Param);
             break;
     }
     packet.Command = packet.Command;

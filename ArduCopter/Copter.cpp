@@ -515,13 +515,14 @@ void Copter::update_QHFC(void)
         case FCFailsafeAction::NONE:
             break;
         case FCFailsafeAction::LAND:
-            do_failsafe_action(FailsafeAction::LAND, ModeReason::BATTERY_FAILSAFE);
+            do_failsafe_action(FailsafeAction::LAND, ModeReason::GCS_COMMAND);     //BATTERY_FAILSAFE
             break;
         case FCFailsafeAction::RTL:
-            do_failsafe_action(FailsafeAction::RTL, ModeReason::BATTERY_FAILSAFE);
+            do_failsafe_action(FailsafeAction::RTL, ModeReason::GCS_COMMAND);
             break;
         case FCFailsafeAction::SMARTRTL:
-            do_failsafe_action(FailsafeAction::SMARTRTL, ModeReason::BATTERY_FAILSAFE);
+            do_failsafe_action(FailsafeAction::SMARTRTL, ModeReason::GCS_COMMAND);
+            //set_mode(Mode::Number::SMARTRTL, ModeReason::GCS_COMMAND);
             break;
         default:
             break;
