@@ -54,7 +54,10 @@ AP_QHFC::AP_QHFC(void)
     _step = 0;
 
     //<-- ------------------------------------------------------------------- ->//
-    OnOff_Cmd = 0;
+    OnOff_Cmd = QHFC_CMD_PARAM_NONE;
+    OnOff_Cmd_buf = OnOff_Cmd;
+    OnOff_Status = QHFC_CMD_PARAM_NONE;
+    OnOff_HPSAck = QHFC_CMD_PARAM_NONE;
     is_armed_old = false;
     debug_cnt = 0;
     //<-- ------------------------------------------------------------------- ->//
@@ -93,74 +96,68 @@ void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)
     case 0x03:
       if(len == 103)
       {
-        FCStatus.SystemTick = ((uint32_t)buf[9] << 24) | ((uint32_t)buf[10] << 16) | ((uint32_t)buf[11] << 8) | (uint32_t)buf[12];
-        FCStatus.FC1Volt =      ((uint16_t)buf[13] << 8) | (uint16_t)buf[14];
-        FCStatus.FC1Current =   ((uint16_t)buf[15] << 8) | (uint16_t)buf[16];
-        FCStatus.FC1Temp1 =     ((uint16_t)buf[17] << 8) | (uint16_t)buf[18];
-        FCStatus.FC1Temp2 =     ((uint16_t)buf[19] << 8) | (uint16_t)buf[20];
-        FCStatus.FC1Error =     ((uint16_t)buf[21] << 8) | (uint16_t)buf[22];
-        FCStatus.FC1FanDuty =   ((uint16_t)buf[23] << 8) | (uint16_t)buf[24];
-        FCStatus.FC1FanSpeed1 = ((uint16_t)buf[25] << 8) | (uint16_t)buf[26];
-        FCStatus.FC1FanSpeed2 = ((uint16_t)buf[27] << 8) | (uint16_t)buf[28];
+        HPSStatusV2.SystemTick = ((uint32_t)buf[9] << 24) | ((uint32_t)buf[10] << 16) | ((uint32_t)buf[11] << 8) | (uint32_t)buf[12];
+        HPSStatusV2.FC1Volt =      ((uint16_t)buf[13] << 8) | (uint16_t)buf[14];
+        HPSStatusV2.FC1Current =   ((uint16_t)buf[15] << 8) | (uint16_t)buf[16];
+        HPSStatusV2.FC1Temp1 =     ((uint16_t)buf[17] << 8) | (uint16_t)buf[18];
+        HPSStatusV2.FC1Temp2 =     ((uint16_t)buf[19] << 8) | (uint16_t)buf[20];
+        HPSStatusV2.FC1Error =     ((uint16_t)buf[21] << 8) | (uint16_t)buf[22];
+        HPSStatusV2.FC1FanDuty =   ((uint16_t)buf[23] << 8) | (uint16_t)buf[24];
+        HPSStatusV2.FC1FanSpeed1 = ((uint16_t)buf[25] << 8) | (uint16_t)buf[26];
+        HPSStatusV2.FC1FanSpeed2 = ((uint16_t)buf[27] << 8) | (uint16_t)buf[28];
 
-        FCStatus.FC2Volt =      ((uint16_t)buf[29] << 8) | (uint16_t)buf[30];
-        FCStatus.FC2Current =   ((uint16_t)buf[31] << 8) | (uint16_t)buf[32];
-        FCStatus.FC2Temp1 =     ((uint16_t)buf[33] << 8) | (uint16_t)buf[34];
-        FCStatus.FC2Temp2 =     ((uint16_t)buf[35] << 8) | (uint16_t)buf[36];
-        FCStatus.FC2Error =     ((uint16_t)buf[37] << 8) | (uint16_t)buf[38];
-        FCStatus.FC2FanDuty =   ((uint16_t)buf[39] << 8) | (uint16_t)buf[40];
-        FCStatus.FC2FanSpeed1 = ((uint16_t)buf[41] << 8) | (uint16_t)buf[42];
-        FCStatus.FC2FanSpeed2 = ((uint16_t)buf[43] << 8) | (uint16_t)buf[44];
+        HPSStatusV2.FC2Volt =      ((uint16_t)buf[29] << 8) | (uint16_t)buf[30];
+        HPSStatusV2.FC2Current =   ((uint16_t)buf[31] << 8) | (uint16_t)buf[32];
+        HPSStatusV2.FC2Temp1 =     ((uint16_t)buf[33] << 8) | (uint16_t)buf[34];
+        HPSStatusV2.FC2Temp2 =     ((uint16_t)buf[35] << 8) | (uint16_t)buf[36];
+        HPSStatusV2.FC2Error =     ((uint16_t)buf[37] << 8) | (uint16_t)buf[38];
+        HPSStatusV2.FC2FanDuty =   ((uint16_t)buf[39] << 8) | (uint16_t)buf[40];
+        HPSStatusV2.FC2FanSpeed1 = ((uint16_t)buf[41] << 8) | (uint16_t)buf[42];
+        HPSStatusV2.FC2FanSpeed2 = ((uint16_t)buf[43] << 8) | (uint16_t)buf[44];
 
-        FCStatus.FC3Volt =      ((uint16_t)buf[45] << 8) | (uint16_t)buf[46];
-        FCStatus.FC3Current =   ((uint16_t)buf[47] << 8) | (uint16_t)buf[48];
-        FCStatus.FC3Temp1 =     ((uint16_t)buf[49] << 8) | (uint16_t)buf[50];
-        FCStatus.FC3Temp2 =     ((uint16_t)buf[51] << 8) | (uint16_t)buf[52];
-        FCStatus.FC3Error =     ((uint16_t)buf[53] << 8) | (uint16_t)buf[54];
-        FCStatus.FC3FanDuty =   ((uint16_t)buf[55] << 8) | (uint16_t)buf[56];
-        FCStatus.FC3FanSpeed1 = ((uint16_t)buf[57] << 8) | (uint16_t)buf[58];
-        FCStatus.FC3FanSpeed2 = ((uint16_t)buf[59] << 8) | (uint16_t)buf[60];
+        HPSStatusV2.FC3Volt =      ((uint16_t)buf[45] << 8) | (uint16_t)buf[46];
+        HPSStatusV2.FC3Current =   ((uint16_t)buf[47] << 8) | (uint16_t)buf[48];
+        HPSStatusV2.FC3Temp1 =     ((uint16_t)buf[49] << 8) | (uint16_t)buf[50];
+        HPSStatusV2.FC3Temp2 =     ((uint16_t)buf[51] << 8) | (uint16_t)buf[52];
+        HPSStatusV2.FC3Error =     ((uint16_t)buf[53] << 8) | (uint16_t)buf[54];
+        HPSStatusV2.FC3FanDuty =   ((uint16_t)buf[55] << 8) | (uint16_t)buf[56];
+        HPSStatusV2.FC3FanSpeed1 = ((uint16_t)buf[57] << 8) | (uint16_t)buf[58];
+        HPSStatusV2.FC3FanSpeed2 = ((uint16_t)buf[59] << 8) | (uint16_t)buf[60];
 
-        FCStatus.FC4Volt =      ((uint16_t)buf[61] << 8) | (uint16_t)buf[62];
-        FCStatus.FC4Current =   ((uint16_t)buf[63] << 8) | (uint16_t)buf[64];
-        FCStatus.FC4Temp1 =     ((uint16_t)buf[65] << 8) | (uint16_t)buf[66];
-        FCStatus.FC4Temp2 =     ((uint16_t)buf[67] << 8) | (uint16_t)buf[68];
-        FCStatus.FC4Error =     ((uint16_t)buf[69] << 8) | (uint16_t)buf[70];
-        FCStatus.FC4FanDuty =   ((uint16_t)buf[71] << 8) | (uint16_t)buf[72];
-        FCStatus.FC4FanSpeed1 = ((uint16_t)buf[73] << 8) | (uint16_t)buf[74];
-        FCStatus.FC4FanSpeed2 = ((uint16_t)buf[75] << 8) | (uint16_t)buf[76];
+        HPSStatusV2.FC4Volt =      ((uint16_t)buf[61] << 8) | (uint16_t)buf[62];
+        HPSStatusV2.FC4Current =   ((uint16_t)buf[63] << 8) | (uint16_t)buf[64];
+        HPSStatusV2.FC4Temp1 =     ((uint16_t)buf[65] << 8) | (uint16_t)buf[66];
+        HPSStatusV2.FC4Temp2 =     ((uint16_t)buf[67] << 8) | (uint16_t)buf[68];
+        HPSStatusV2.FC4Error =     ((uint16_t)buf[69] << 8) | (uint16_t)buf[70];
+        HPSStatusV2.FC4FanDuty =   ((uint16_t)buf[71] << 8) | (uint16_t)buf[72];
+        HPSStatusV2.FC4FanSpeed1 = ((uint16_t)buf[73] << 8) | (uint16_t)buf[74];
+        HPSStatusV2.FC4FanSpeed2 = ((uint16_t)buf[75] << 8) | (uint16_t)buf[76];
 
-        FCStatus.LiVolt =           ((uint16_t)buf[77] << 8) | (uint16_t)buf[78];
-        FCStatus.LiCurrent =        ((uint16_t)buf[79] << 8) | (uint16_t)buf[80];
-        FCStatus.LiError =          ((uint16_t)buf[81] << 8) | (uint16_t)buf[82];
+        HPSStatusV2.LiVolt =           ((uint16_t)buf[77] << 8) | (uint16_t)buf[78];
+        HPSStatusV2.LiCurrent =        ((uint16_t)buf[79] << 8) | (uint16_t)buf[80];
+        HPSStatusV2.LiError =          ((uint16_t)buf[81] << 8) | (uint16_t)buf[82];
 
-        FCStatus.H2PressureH =      ((uint16_t)buf[83] << 8) | (uint16_t)buf[84];
-        FCStatus.H2PressureL =      ((uint16_t)buf[85] << 8) | (uint16_t)buf[86];
-        FCStatus.AmbTemperature =   ((uint16_t)buf[87] << 8) | (uint16_t)buf[88];
-        FCStatus.AmbHumidity =      ((uint16_t)buf[89] << 8) | (uint16_t)buf[90];
-        FCStatus.AmbControlStatus = ((uint16_t)buf[91] << 8) | (uint16_t)buf[92];
+        HPSStatusV2.H2PressureH =      ((uint16_t)buf[83] << 8) | (uint16_t)buf[84];
+        HPSStatusV2.H2PressureL =      ((uint16_t)buf[85] << 8) | (uint16_t)buf[86];
+        HPSStatusV2.AmbTemperature =   ((uint16_t)buf[87] << 8) | (uint16_t)buf[88];
+        HPSStatusV2.AmbHumidity =      ((uint16_t)buf[89] << 8) | (uint16_t)buf[90];
+        HPSStatusV2.AmbControlStatus = ((uint16_t)buf[91] << 8) | (uint16_t)buf[92];
+        HPSStatusV2_To_GC();
       }
       else if(len == 47)
       {
-        #if(1)
-        FCStatus.FC1Volt = (buf[11]<<8) | buf[12];
-        FCStatus.FC1Current = (buf[13]<<8) | buf[14]; 
-        FCStatus.FC1Temp1 = (buf[15]<<8) | buf[16];
-        FCStatus.LiVolt = (buf[19]<<8) | buf[20];
-        FCStatus.LiCurrent = (buf[21]<<8) | buf[22];
-        FCStatus.H2PressureH = (buf[31]<<8) | buf[32];
-        FCStatus.Warning = (buf[41]<<8) | buf[42];
-        FCStatus.Fault = (buf[43]<<8) | buf[44];
-        #else
-        FCStatusOld._FCV = (buf[11]<<8) | buf[12];   //两数值合并
-        FCStatusOld._FCA = (buf[13]<<8) | buf[14]; 
-        FCStatusOld._FCWENDU = (buf[15]<<8) | buf[16];
-        FCStatusOld._FCW = (buf[17]<<8) | buf[18]; 
-        FCStatusOld._FCDCV = (buf[19]<<8) | buf[20];
-        FCStatusOld._FCDCA = (buf[21]<<8) | buf[22];
-        FCStatusOld._FCKW = (buf[27]<<8) | buf[28];
-        FCStatusOld._FCMPA = (buf[31]<<8) | buf[32];
-        #endif
+        HPSStatusV1._FCV = (buf[11]<<8) | buf[12];   //两数值合并
+        HPSStatusV1._FCA = (buf[13]<<8) | buf[14]; 
+        HPSStatusV1._FCWENDU = (buf[15]<<8) | buf[16];
+        HPSStatusV1._FCW = (buf[17]<<8) | buf[18]; 
+        HPSStatusV1._FCDCV = (buf[19]<<8) | buf[20];
+        HPSStatusV1._FCDCA = (buf[21]<<8) | buf[22];
+        HPSStatusV1._FCKW = (buf[27]<<8) | buf[28];
+        HPSStatusV1._FCMPA = (buf[31]<<8) | buf[32];
+
+        HPSStatusV1.Warning = (buf[41]<<8) | buf[42];
+        HPSStatusV1.Fault = (buf[43]<<8) | buf[44];
+        HPSStatusV1_To_GC();
       }
       
       last_frame_ms = AP_HAL::millis();
@@ -168,7 +165,15 @@ void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)
       //Log_Write_qhfc();
       break;
     case 0x06:
-      qh_onoff = buf[5];
+      if(buf[5] == 0x01)
+      {
+        OnOff_HPSAck = QHFC_CMD_PARAM_ON;
+      }
+      else if(buf[5] == 0x00)
+      {
+        OnOff_HPSAck = QHFC_CMD_PARAM_OFF;
+      }
+      _Clear_Cmd();
 
       last_frame_ms = AP_HAL::millis();
       //gcs().send_message(MSG_QH_FCSTATUS);
@@ -184,6 +189,7 @@ bool AP_QHFC::update()
   if (_port == NULL) 
     return false;   
 
+  Update_GC_OnOff();
   int16_t numc = _port->available();
       
   data = 0;
@@ -239,6 +245,126 @@ bool AP_QHFC::update()
 }
 
 //////
+void AP_QHFC::HPSStatusV2_To_GC(void)
+{
+  uint32_t Status = GCStatus.FCStatus & 0x03;
+  uint16_t FCVoltage,FCCurrent;
+
+  Status |= (HPSStatusV2.FCStatus & (~(uint32_t)0x00000003));
+  GCStatus.FCStatus = Status;
+
+  GCStatus.FCTemperature[0] = CalFCTemperature(0);
+  GCStatus.FCTemperature[1] = CalFCTemperature(1);
+  GCStatus.FCTemperature[2] = CalFCTemperature(2);
+  GCStatus.FCTemperature[3] = CalFCTemperature(3);
+  CalFCVoltCur(FCVoltage,FCCurrent);
+  GCStatus.FCVoltage = FCVoltage;
+  GCStatus.FCCurrent = FCCurrent;
+  GCStatus.LIVoltage = HPSStatusV2.LiVolt;
+  GCStatus.LICurrent = HPSStatusV2.LiCurrent;
+  GCStatus.Press = HPSStatusV2.H2PressureH;
+    
+  GCStatus.AmbTemperature = HPSStatusV2.AmbTemperature;
+  GCStatus.AmbHumidity = HPSStatusV2.AmbHumidity;
+  GCStatus.AmbControlStatus = HPSStatusV2.AmbControlStatus;
+}
+void AP_QHFC::HPSStatusV1_To_GC(void)
+{
+  uint32_t Status = GCStatus.FCStatus & 0x03;
+
+  //press
+  if(HPSStatusV1.Warning & QHFC_V1_WARNING_PRESSLOW)
+  {
+    Status |= QHFC_V2_WARNING_PRESSLOW;
+  }
+  //temperature high
+  if(HPSStatusV1.Fault & QHFC_V1_FAULT_TEMPHIGH)
+  {
+    Status |= QHFC_V2_FAULT_TEMPHIGH;
+  }
+  else if(HPSStatusV1.Warning & QHFC_V1_WARNING_TEMPHIGH)
+  {
+    Status |= QHFC_V2_WARNING_TEMPHIGH;
+  }
+  //FC voltage low
+  if(HPSStatusV1.Fault & QHFC_V1_FAULT_VOLTAGELOW)
+  {
+    Status |= QHFC_V2_FAULT_FCVOLTAGELOW;
+  }
+  else if(HPSStatusV1.Warning & QHFC_V1_WARNING_VOLTAGELOW)
+  {
+    Status |= QHFC_V2_WARNING_FCVOLTAGELOW;
+  }
+  //LI voltage low
+  //fan speed error
+  if(HPSStatusV1.Warning & QHFC_V1_WARNING_FANSPEED)
+  {
+    Status |= QHFC_V2_WARNING_FANSPEED;
+  }
+  //h2 leakage
+  //performance low
+  if(HPSStatusV1.Warning & QHFC_V1_WARNING_PERFORMLOW)
+  {
+    Status |= QHFC_V2_WARNING_PERFORMLOW;
+  }
+
+  GCStatus.FCStatus = Status;
+  GCStatus.FCTemperature[0] = HPSStatusV1._FCWENDU;
+  GCStatus.FCTemperature[1] = 0;
+  GCStatus.FCTemperature[2] = 0;
+  GCStatus.FCTemperature[3] = 0;
+  GCStatus.FCVoltage = HPSStatusV1._FCV;
+  GCStatus.FCCurrent = HPSStatusV1._FCA;
+  GCStatus.LIVoltage = HPSStatusV1._FCDCV;
+  GCStatus.LICurrent = HPSStatusV1._FCDCA;
+  GCStatus.Press = HPSStatusV1._FCMPA;
+    
+  GCStatus.AmbTemperature = 0;
+  GCStatus.AmbHumidity = 0;
+  GCStatus.AmbControlStatus = 0;
+}
+
+void AP_QHFC::Update_GC_OnOff(void)
+{
+  uint32_t Status = GCStatus.FCStatus;
+
+  Status = Status & (~((uint32_t)0x00000003));
+  if(OnOff_Status == QHFC_CMD_PARAM_ON)
+  {
+    Status |= QHFC_V2_ON;
+  }
+  GCStatus.FCStatus = Status;
+}
+
+bool AP_QHFC::IsFCFault(void)
+{
+  uint8_t i;
+  uint32_t Status = GCStatus.FCStatus;
+
+     // on/off bit
+  for(i = 0;i < 15;i++)
+  {
+    Status >>= 2;
+    if((Status & 0x03) == 0x02)
+      return true;
+  }
+  return false;
+}
+bool AP_QHFC::IsFCWarning(void)
+{
+  uint8_t i;
+  uint32_t Status = GCStatus.FCStatus;
+
+     // on/off bit
+  for(i = 0;i < 15;i++)
+  {
+    Status >>= 2;
+    if((Status & 0x03) == 0x01)
+      return true;
+  }
+  return false;
+}
+
 int16_t AP_QHFC::CalFCTemperature(uint8_t Ch)
 {
   int16_t temp1,temp2;
@@ -246,20 +372,20 @@ int16_t AP_QHFC::CalFCTemperature(uint8_t Ch)
   switch(Ch)
   {
     case 0:
-      temp1 = FCStatus.FC1Temp1;
-      temp2 = FCStatus.FC1Temp2;
+      temp1 = HPSStatusV2.FC1Temp1;
+      temp2 = HPSStatusV2.FC1Temp2;
       break;
     case 1:
-      temp1 = FCStatus.FC2Temp1;
-      temp2 = FCStatus.FC2Temp2;
+      temp1 = HPSStatusV2.FC2Temp1;
+      temp2 = HPSStatusV2.FC2Temp2;
       break;
     case 2:
-      temp1 = FCStatus.FC3Temp1;
-      temp2 = FCStatus.FC3Temp2;
+      temp1 = HPSStatusV2.FC3Temp1;
+      temp2 = HPSStatusV2.FC3Temp2;
       break;
     case 3:
-      temp1 = FCStatus.FC4Temp1;
-      temp2 = FCStatus.FC4Temp2;
+      temp1 = HPSStatusV2.FC4Temp1;
+      temp2 = HPSStatusV2.FC4Temp2;
       break;
     default:
       return QHFC_TEMP_MAX;
@@ -275,98 +401,139 @@ int16_t AP_QHFC::CalFCTemperature(uint8_t Ch)
 }
 void AP_QHFC::CalFCVoltCur(uint16_t &Volt,uint16_t &Cur)
 {
-  uint16_t v = FCStatus.FC1Volt;
+  uint16_t v = HPSStatusV2.FC1Volt;
   uint16_t i;
   uint32_t p;
 
-  if(FCStatus.FC2Volt > v)v = FCStatus.FC2Volt;
-  if(FCStatus.FC3Volt > v)v = FCStatus.FC3Volt;
-  if(FCStatus.FC4Volt > v)v = FCStatus.FC4Volt;
+  if(HPSStatusV2.FC2Volt > v)v = HPSStatusV2.FC2Volt;
+  if(HPSStatusV2.FC3Volt > v)v = HPSStatusV2.FC3Volt;
+  if(HPSStatusV2.FC4Volt > v)v = HPSStatusV2.FC4Volt;
 
-  p = (uint32_t)FCStatus.FC1Volt * FCStatus.FC1Current;
-  p += (uint32_t)FCStatus.FC2Volt * FCStatus.FC2Current;
-  p += (uint32_t)FCStatus.FC3Volt * FCStatus.FC3Current;
-  p += (uint32_t)FCStatus.FC4Volt * FCStatus.FC4Current;
+  p = (uint32_t)HPSStatusV2.FC1Volt * HPSStatusV2.FC1Current;
+  p += (uint32_t)HPSStatusV2.FC2Volt * HPSStatusV2.FC2Current;
+  p += (uint32_t)HPSStatusV2.FC3Volt * HPSStatusV2.FC3Current;
+  p += (uint32_t)HPSStatusV2.FC4Volt * HPSStatusV2.FC4Current;
 
   i = p / v;
 
   Volt = v;
   Cur = i;
 }
+
+void AP_QHFC::Set_Cmd(uint16_t Param)
+{
+  if(Param == QHFC_CMD_PARAM_ON)
+    OnOff_Cmd = QHFC_CMD_PARAM_ON;
+  else if(Param == QHFC_CMD_PARAM_OFF)
+    OnOff_Cmd = QHFC_CMD_PARAM_OFF;
+}
 //
 //
 // ******************发送氢航握手包
-void AP_QHFC::send_woshoubao(){
-      uint8_t woshou[] = {0x01, 0x03, 0x00, 0x00, 0x00, 0x13, 0x04, 0x07};
+void AP_QHFC::send_woshoubao()
+{
+  uint8_t woshou[] = {0x01, 0x03, 0x00, 0x00, 0x00, 0x13, 0x04, 0x07};
+  if (_port == nullptr)
+  {
+    return;
+  }
 
-      _port->write(woshou,8);
-
+  _port->write(woshou,8);
 }
 
 
 //关闭氢航燃料电池
 void AP_QHFC::send_guan()  //发送需要别的地方触发
 {
-     uint8_t guan[]={0x01, 0x06, 0x00, 0x13, 0x00, 0x00, 0x78, 0x0F};
-    if (_port == nullptr) {
-        return;
-      }
-          _port->write(guan,8); 
-      
-    }
+  uint8_t guan[]={0x01, 0x06, 0x00, 0x13, 0x00, 0x00, 0x78, 0x0F};
+  if (_port == nullptr)
+  {
+    return;
+  }
+  _port->write(guan,8); 
+}
 
 //开启氢航燃料电池
 void AP_QHFC::send_kai()  //发送需要别的地方触发
 {
-     uint8_t kai[]={0x01, 0x06, 0x00, 0x13, 0x00, 0x01, 0xB9, 0xCF};
-    if (_port == nullptr) {
-        return;
-    }
-        _port->write(kai,8); //发送数据
-        
-    }
+  uint8_t kai[]={0x01, 0x06, 0x00, 0x13, 0x00, 0x01, 0xB9, 0xCF};
+  if (_port == nullptr)
+  {
+    return;
+  }
+  _port->write(kai,8); //发送数据
+}
 
+void AP_QHFC::_Send_Cmd(void)
+{
+  if(OnOff_Cmd_buf == QHFC_CMD_PARAM_ON)
+  {
+    send_kai();
+  }
+  else if(OnOff_Cmd_buf == QHFC_CMD_PARAM_OFF)
+  {
+    send_guan();
+  }
+  OnOff_HPSAck = QHFC_CMD_PARAM_NONE;
+}
+void AP_QHFC::_Clear_Cmd(void)
+{
+  OnOff_Cmd_buf = QHFC_CMD_PARAM_NONE;
+}
 
 void AP_QHFC::tick(void)// 定时器函数
 {
   uint32_t now = AP_HAL::millis();
 
-  if (now - last_send_frame_ms > 100)
+  //
+  uint32_t deltaT = now - last_tick_ms;
+  last_tick_ms = now;
+
+  Cmd_Timeout_Cnt += deltaT;
+
+  if((OnOff_Cmd == QHFC_CMD_PARAM_ON) || (OnOff_Cmd == QHFC_CMD_PARAM_OFF ))
   {
-    last_send_frame_ms = now;
-    if((OnOff_Cmd == QHFC_CMD_PARAM_ON ) || (OnOff_Cmd == QHFC_CMD_PARAM_OFF ))
+    Cmd_Retry_Cnt = 0;
+
+    OnOff_Cmd_buf = OnOff_Cmd;
+    
+    OnOff_Cmd = QHFC_CMD_PARAM_NONE;
+  }
+
+  if((OnOff_Cmd_buf == QHFC_CMD_PARAM_ON) || (OnOff_Cmd_buf == QHFC_CMD_PARAM_OFF))
+  {
+    if(Cmd_Timeout_Cnt >= CMD_TIMEOUT_MAX)
     {
-      if (OnOff_Cmd == QHFC_CMD_PARAM_ON )
+      if(Cmd_Retry_Cnt < CMD_RETRY_CNT)
       {
-        send_kai();
-        OnOff_Cmd = FCkai;
-        if (qh_onoff ==0x01)
-        {
-          OnOff_Cmd = 1;
-          /// qh_kaiguan = QHFC_CMD_PARAM_ON;
-          //gcs().send_message(MSG_QH_FCSTATUS);
-        }
+        _Send_Cmd();
+        Cmd_Retry_Cnt++;
       }
-      if (OnOff_Cmd == QHFC_CMD_PARAM_OFF )
+      else
       {
-        send_guan();
-        OnOff_Cmd = FCguan;
-        if (qh_onoff == 0x00)
-        {
-          OnOff_Cmd = 0;
-          //qh_kaiguan = QHFC_CMD_PARAM_OFF;
-          //gcs().send_message(MSG_QH_FCSTATUS);
-        }
+        _Clear_Cmd();
       }
-    }
-    else
-    {
-      send_woshoubao();
+      Cmd_Timeout_Cnt = 0;
     }
   }
-  return ;
-     //}
-}   //uint8_t checksum =0;
+  else
+  {
+    if(Cmd_Timeout_Cnt >= CMD_TIMEOUT_MAX)
+    {
+      send_woshoubao();
+      Cmd_Timeout_Cnt = 0;
+    }
+  }
+
+  if(OnOff_HPSAck == QHFC_CMD_PARAM_ON)
+  {
+    OnOff_Status = QHFC_CMD_PARAM_ON;
+  }
+  else if(OnOff_HPSAck == QHFC_CMD_PARAM_OFF)
+  {
+    OnOff_Status = QHFC_CMD_PARAM_OFF;
+  }
+}
 
 #define DEBUG_FC_FAULTSAFE      (0)
 
@@ -389,12 +556,14 @@ FCFailsafeAction AP_QHFC::handle_FC_failsafe(bool is_armed)
       debug_cnt++;
       if(debug_cnt == 1000)
       {
-        FCStatus.Warning = 1;
+        HPSStatusV1.Warning = 1;
+        HPSStatusV1_To_GC();
         gcs().send_text(MAV_SEVERITY_INFO,"debug:set Warning!");
       }
       if(debug_cnt == 1200)
       {
-        FCStatus.Fault = 1;
+        HPSStatusV1.Fault = 1;
+        HPSStatusV1_To_GC();
         gcs().send_text(MAV_SEVERITY_INFO,"debug:set Fault!");
       }
       #endif
@@ -409,7 +578,7 @@ FCFailsafeAction AP_QHFC::handle_FC_failsafe(bool is_armed)
   //
   if(is_armed == true)
   {
-    if(FCStatus.Fault != 0)
+    if(IsFCFault())
     {
       if((CurAction == FCFailsafeAction::NONE) || (CurAction == FCFailsafeAction::SMARTRTL))
       {
@@ -417,7 +586,7 @@ FCFailsafeAction AP_QHFC::handle_FC_failsafe(bool is_armed)
         gcs().send_text(MAV_SEVERITY_ERROR,"Fault:set mode LAND!");
       }
     }
-    else if(FCStatus.Warning != 0)
+    else if(IsFCWarning())
     {
       if(CurAction == FCFailsafeAction::NONE)
       {
