@@ -56,7 +56,6 @@
 #include <AP_Frsky_Telem/AP_Frsky_Telem.h>
 #include <RC_Channel/RC_Channel.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
-
 //<-- ------------------------------------------------------------------- ->//
 #include <AP_QHFC/AP_QHFC.h>   //定义氢航通信
 //<-- ------------------------------------------------------------------- ->//
@@ -3817,25 +3816,6 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
     }
 }
 
-//<-- ------------------------------------------------------------------- ->//
-void GCS_MAVLINK::handle_QH_FCControl(const mavlink_message_t &msg) const
-{
-    mavlink_qh_fccontrol_t packet;
-
-    mavlink_msg_qh_fccontrol_decode(&msg, &packet);
-
-    AP_QHFC &qhfc = AP::qhfc();
-
-    switch(packet.Command)
-    {
-        case QHFC_COMMAND_ONOFF:
-            qhfc.Set_Cmd(packet.Param);
-            break;
-    }
-    packet.Command = packet.Command;
-}
-//<-- ------------------------------------------------------------------- ->//
-
 /*
   handle messages which don't require vehicle specific data
  */
@@ -4111,11 +4091,6 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         AP_CheckFirmware::handle_msg(chan, msg);
         break;
 #endif
-    //<-- ------------------------------------------------------------------- ->//
-    case MAVLINK_MSG_ID_QH_FCCONTROL:
-        handle_QH_FCControl(msg);
-        break;
-    //<-- ------------------------------------------------------------------- ->//
     }
 
 }

@@ -3,6 +3,9 @@
 #include "GCS_Mavlink.h"
 #include <AP_RPM/AP_RPM_config.h>
 #include <AP_EFI/AP_EFI_config.h>
+//<-- ------------------------------------------------------------------- ->//
+#include <AP_QHFC/AP_QHFC.h>   //定义氢航通信
+//<-- ------------------------------------------------------------------- ->//
 
 MAV_TYPE GCS_Copter::frame_type() const
 {
@@ -1035,9 +1038,32 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         GCS_MAVLINK_Copter::convert_COMMAND_LONG_to_COMMAND_INT(packet, packet_int);
         return handle_command_pause_continue(packet_int);
     }
+    case MAV_CMD_QH_FCCONTROL:{
+        return handle_command_QH_FCControl(packet);
+    }
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }
+}
+
+MAV_RESULT GCS_MAVLINK_Copter::handle_command_QH_FCControl(const mavlink_command_long_t &packet)
+{
+//    mavlink_qh_fccontrol_t packet;
+
+//    mavlink_msg_qh_fccontrol_decode(&msg, &packet);
+    uint16_t SubCmd = (uint16_t)packet.param1;
+    uint16_t Param = (uint16_t)packet.param2;
+
+    AP_QHFC &qhfc = AP::qhfc();
+
+    switch(SubCmd)
+    {
+        case QHFC_COMMAND_ONOFF:
+            qhfc.Set_Cmd(Param);
+            break;
+    }
+    
+    return MAV_RESULT_ACCEPTED;
 }
 
 MAV_RESULT GCS_MAVLINK_Copter::handle_command_pause_continue(const mavlink_command_int_t &packet)
