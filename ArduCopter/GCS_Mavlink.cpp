@@ -536,8 +536,8 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_ATTITUDE,
     MSG_SIMSTATE,
     MSG_AHRS2,
-    MSG_PID_TUNING, // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
-    MSG_QH_FCSTATUS
+    MSG_PID_TUNING // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
+    //MSG_QH_FCSTATUS
 };
 static const ap_message STREAM_EXTRA2_msgs[] = {
     MSG_VFR_HUD
