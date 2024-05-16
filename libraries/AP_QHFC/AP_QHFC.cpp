@@ -225,7 +225,14 @@ bool AP_QHFC::update()
       case 3:
         recv_buf[recv_cnt] = data;
         recv_cnt ++;
-        if(recv_cnt == recv_buf[2] + 5)
+                //------------------------------------------//
+        uint16_t payload_len;
+        if((recv_buf[1] == 0x06) && (protocol == AP_SerialManager::SerialProtocol_QHFC_V1))
+          payload_len = 3;
+        else
+          payload_len = recv_buf[2];
+        //------------------------------------------//
+        if(recv_cnt == payload_len + 5)
         {
           QHFC_crc = calc_crc_modbus(recv_buf, recv_cnt - 2);
           crch = QHFC_crc >> 8;

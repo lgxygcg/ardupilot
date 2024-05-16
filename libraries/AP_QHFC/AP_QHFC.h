@@ -28,7 +28,7 @@
 #define QHFC_CMD_PARAM_ON       (0x55)
 #define QHFC_CMD_PARAM_OFF      (0xAA)
 
-#define CMD_TIMEOUT_MAX         (100)
+#define CMD_TIMEOUT_MAX         (300)
 #define CMD_RETRY_CNT           (3)
 //
 #define QHFC_TEMP_MIN           (-600)      //-600 -> -60degree

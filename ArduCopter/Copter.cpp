@@ -523,6 +523,7 @@ void Copter::update_QHFC(void)
         case FCFailsafeAction::SMARTRTL:
             do_failsafe_action(FailsafeAction::SMARTRTL, ModeReason::GCS_COMMAND);
             //set_mode(Mode::Number::SMARTRTL, ModeReason::GCS_COMMAND);
+            //copter.set_mode(Mode::Number::SMART_RTL, ModeReason::GCS_COMMAND);
             break;
         default:
             break;

@@ -656,10 +656,6 @@ protected:
     MAV_RESULT handle_can_forward(const mavlink_command_long_t &packet, const mavlink_message_t &msg);
     void handle_can_frame(const mavlink_message_t &msg) const;
 
-    //<-- ------------------------------------------------------------------- ->//
-    void handle_QH_FCControl(const mavlink_message_t &msg) const;
-    //<-- ------------------------------------------------------------------- ->//
-
     void handle_optical_flow(const mavlink_message_t &msg);
 
     MAV_RESULT handle_fixed_mag_cal_yaw(const mavlink_command_long_t &packet);
