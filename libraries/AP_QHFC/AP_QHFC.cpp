@@ -343,33 +343,37 @@ void AP_QHFC::Update_GC_OnOff(void)
   GCStatus.FCStatus = Status;
 }
 
-bool AP_QHFC::IsFCFault(void)
+uint16_t AP_QHFC::GetFCFault(void)
 {
   uint8_t i;
   uint32_t Status = GCStatus.FCStatus;
+  uint16_t Result = 0;
 
      // on/off bit
   for(i = 0;i < 15;i++)
   {
     Status >>= 2;
     if((Status & 0x03) == 0x02)
-      return true;
+      Result |= 0x0001;
+    Result <<= 1;
   }
-  return false;
+  return Result;
 }
-bool AP_QHFC::IsFCWarning(void)
+uint16_t AP_QHFC::GetFCWarning(void)
 {
   uint8_t i;
   uint32_t Status = GCStatus.FCStatus;
+  uint16_t Result = 0;
 
      // on/off bit
   for(i = 0;i < 15;i++)
   {
     Status >>= 2;
     if((Status & 0x03) == 0x01)
-      return true;
+      Result |= 0x0001;
+    Result <<= 1;
   }
-  return false;
+  return Result;
 }
 
 int16_t AP_QHFC::CalFCTemperature(uint8_t Ch)
@@ -542,68 +546,50 @@ void AP_QHFC::tick(void)// 定时器函数
   }
 }
 
-#define DEBUG_FC_FAULTSAFE      (0)
-
 FCFailsafeAction AP_QHFC::handle_FC_failsafe(bool is_armed)
 {
-  //FCFailsafeAction Action = FCFailsafeAction::NONE;
+  uint16_t FCFault_Cur;
+  uint16_t FCWarning_Cur;
+  FCFailsafeAction Ret = FCFailsafeAction::NONE;
+
+  FCFault_Cur = GetFCFault();
+  FCWarning_Cur = GetFCWarning();
 
   if(is_armed == true)
   {
-    if(is_armed_old == false)
+    if((FCFault_Last != 0) || (FCFault_Cur != 0))
     {
-      CurAction = FCFailsafeAction::NONE;
-      #if DEBUG_FC_FAULTSAFE
-      debug_cnt = 0;
-      #endif
+      CurAction = FCFailsafeAction::LAND;
+      if(((FCFault_Last ^ FCFault_Cur) & FCFault_Cur) != 0)
+      {
+        LastAction = FCFailsafeAction::NONE;
+      }
+      FCFault_Last |= FCFault_Cur;
     }
-    else
+    else if((FCWarning_Last != 0) || (FCWarning_Cur != 0))
     {
-      #if DEBUG_FC_FAULTSAFE
-      debug_cnt++;
-      if(debug_cnt == 1000)
+      CurAction = FCFailsafeAction::RTL;
+      if(((FCWarning_Last ^ FCWarning_Cur) & FCWarning_Cur) != 0)
       {
-        HPSStatusV1.Warning = 1;
-        HPSStatusV1_To_GC();
-        gcs().send_text(MAV_SEVERITY_INFO,"debug:set Warning!");
+        LastAction = FCFailsafeAction::NONE;
       }
-      if(debug_cnt == 1200)
-      {
-        HPSStatusV1.Fault = 1;
-        HPSStatusV1_To_GC();
-        gcs().send_text(MAV_SEVERITY_INFO,"debug:set Fault!");
-      }
-      #endif
+      FCWarning_Last |= FCWarning_Cur;
     }
   }
   else
   {
     CurAction = FCFailsafeAction::NONE;
+    FCFault_Last = 0;
+    FCWarning_Last = 0;
   }
-  is_armed_old = is_armed;
 
-  //
-  if(is_armed == true)
+  if(LastAction != CurAction)
   {
-    if(IsFCFault())
-    {
-      if((CurAction == FCFailsafeAction::NONE) || (CurAction == FCFailsafeAction::SMARTRTL))
-      {
-        CurAction = FCFailsafeAction::LAND;
-        gcs().send_text(MAV_SEVERITY_ERROR,"Fault:set mode LAND!");
-      }
-    }
-    else if(IsFCWarning())
-    {
-      if(CurAction == FCFailsafeAction::NONE)
-      {
-        CurAction = FCFailsafeAction::SMARTRTL;
-        gcs().send_text(MAV_SEVERITY_ERROR,"Fault:set mode SMARTRTL!");
-      }
-    }
+    Ret = CurAction;
+    LastAction = CurAction;
   }
 
-  return CurAction;
+  return Ret;
 }
 ///后加程序 
 ////后加的

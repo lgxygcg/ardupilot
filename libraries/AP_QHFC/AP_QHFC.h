@@ -187,6 +187,7 @@ public:
 
     bool is_armed_old;
     FCFailsafeAction CurAction;
+    FCFailsafeAction LastAction;
     FCFailsafeAction handle_FC_failsafe(bool is_armed);
 
     uint32_t last_frame_ms;
@@ -231,6 +232,9 @@ private:
     uint32_t Cmd_Timeout_Cnt;
     uint16_t Cmd_Retry_Cnt;
 
+    uint16_t FCFault_Last;
+    uint16_t FCWarning_Last;
+
     uint32_t last_tick_ms;
 
     void packedReceived(uint8_t *buf,uint16_t len);
@@ -239,8 +243,8 @@ private:
     void HPSStatusV2_To_GC(void);
     void HPSStatusV1_To_GC(void);
     void Update_GC_OnOff(void);
-    bool IsFCFault(void);
-    bool IsFCWarning(void);
+    uint16_t GetFCFault(void);
+    uint16_t GetFCWarning(void);
     //<-- ------------------------------------------------------------------- ->//
     //
          uint8_t recv_buf[QHFC_RECVBUF_SIZE];
