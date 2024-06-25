@@ -59,6 +59,7 @@ AP_QHFC::AP_QHFC(void)
     OnOff_Status = QHFC_CMD_PARAM_NONE;
     OnOff_HPSAck = QHFC_CMD_PARAM_NONE;
     is_armed_old = false;
+    PacketLostCnt = 0;
     debug_cnt = 0;
     //<-- ------------------------------------------------------------------- ->//
 }
@@ -146,17 +147,18 @@ void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)
       }
       else if(len == 47)
       {
-        HPSStatusV1._FCV = (buf[11]<<8) | buf[12];   //两数值合并
-        HPSStatusV1._FCA = (buf[13]<<8) | buf[14]; 
-        HPSStatusV1._FCWENDU = (buf[15]<<8) | buf[16];
-        HPSStatusV1._FCW = (buf[17]<<8) | buf[18]; 
-        HPSStatusV1._FCDCV = (buf[19]<<8) | buf[20];
-        HPSStatusV1._FCDCA = (buf[21]<<8) | buf[22];
-        HPSStatusV1._FCKW = (buf[27]<<8) | buf[28];
-        HPSStatusV1._FCMPA = (buf[31]<<8) | buf[32];
+        HPSStatusV1.Humidity = ((uint16_t)buf[9]<<8) | buf[10];
+        HPSStatusV1._FCV = ((uint16_t)buf[11]<<8) | buf[12];   //两数值合并
+        HPSStatusV1._FCA = ((uint16_t)buf[13]<<8) | buf[14]; 
+        HPSStatusV1._FCWENDU = ((uint16_t)buf[15]<<8) | buf[16];
+        HPSStatusV1._FCW = ((uint16_t)buf[17]<<8) | buf[18]; 
+        HPSStatusV1._FCDCV = ((uint16_t)buf[19]<<8) | buf[20];
+        HPSStatusV1._FCDCA = ((uint16_t)buf[21]<<8) | buf[22];
+        HPSStatusV1._FCKW = ((uint16_t)buf[27]<<8) | buf[28];
+        HPSStatusV1._FCMPA = ((uint32_t)buf[29]<<24) | ((uint32_t)buf[30]<<16) | ((uint32_t)buf[31]<<8) | buf[32];
 
-        HPSStatusV1.Warning = (buf[41]<<8) | buf[42];
-        HPSStatusV1.Fault = (buf[43]<<8) | buf[44];
+        HPSStatusV1.Warning = ((uint16_t)buf[41]<<8) | buf[42];
+        HPSStatusV1.Fault = ((uint16_t)buf[43]<<8) | buf[44];
         HPSStatusV1_To_GC();
       }
       
@@ -190,6 +192,7 @@ bool AP_QHFC::update()
     return false;   
 
   Update_GC_OnOff();
+  Update_GC_HPSLost();
   int16_t numc = _port->available();
       
   data = 0;
@@ -241,6 +244,7 @@ bool AP_QHFC::update()
           if((recv_buf[recv_cnt - 2] == chal) && (recv_buf[recv_cnt - 1] == crch))
           {
             packedReceived(recv_buf,recv_cnt);
+            PacketLostCnt_Clr();
             return true;
           }
           _step = 0;
@@ -254,11 +258,11 @@ bool AP_QHFC::update()
 //////
 void AP_QHFC::HPSStatusV2_To_GC(void)
 {
-  uint32_t Status = GCStatus.FCStatus & 0x03;
+  uint32_t Status1 = GCStatus.FCStatus1 & 0x03;
   uint16_t FCVoltage,FCCurrent;
 
-  Status |= (HPSStatusV2.FCStatus & (~(uint32_t)0x00000003));
-  GCStatus.FCStatus = Status;
+  Status1 |= (HPSStatusV2.FCStatus & (~(uint32_t)0x00000003));
+  GCStatus.FCStatus1 = Status1;
 
   GCStatus.FCTemperature[0] = CalFCTemperature(0);
   GCStatus.FCTemperature[1] = CalFCTemperature(1);
@@ -269,109 +273,151 @@ void AP_QHFC::HPSStatusV2_To_GC(void)
   GCStatus.FCCurrent = FCCurrent;
   GCStatus.LIVoltage = HPSStatusV2.LiVolt;
   GCStatus.LICurrent = HPSStatusV2.LiCurrent;
-  GCStatus.Press = HPSStatusV2.H2PressureH;
+  GCStatus.Press[0] = HPSStatusV2.H2PressureH;
     
-  GCStatus.AmbTemperature = HPSStatusV2.AmbTemperature;
   GCStatus.AmbHumidity = HPSStatusV2.AmbHumidity;
-  GCStatus.AmbControlStatus = HPSStatusV2.AmbControlStatus;
 }
 void AP_QHFC::HPSStatusV1_To_GC(void)
 {
-  uint32_t Status = GCStatus.FCStatus & 0x03;
+  //uint32_t Status1 = GCStatus.FCStatus1 & 0x03;
+  uint32_t Status2 = 0x00;
+  uint32_t tStatus;
 
   //press
+  tStatus = 0;
   if(HPSStatusV1.Warning & QHFC_V1_WARNING_PRESSLOW)
   {
-    Status |= QHFC_V2_WARNING_PRESSLOW;
+    tStatus |= QHFC_GC_WARNING;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
+  Status2 |= (tStatus << QHFC_GC_STA2_PRESS);
   //temperature high
+  tStatus = 0;
   if(HPSStatusV1.Fault & QHFC_V1_FAULT_TEMPHIGH)
   {
-    Status |= QHFC_V2_FAULT_TEMPHIGH;
+    tStatus |= QHFC_GC_FAULT;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
   else if(HPSStatusV1.Warning & QHFC_V1_WARNING_TEMPHIGH)
   {
-    Status |= QHFC_V2_WARNING_TEMPHIGH;
+    tStatus |= QHFC_GC_WARNING;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
+  Status2 |= (tStatus << QHFC_GC_STA2_TEMP);
   //FC voltage low
+  tStatus = 0;
   if(HPSStatusV1.Fault & QHFC_V1_FAULT_VOLTAGELOW)
   {
-    Status |= QHFC_V2_FAULT_FCVOLTAGELOW;
+    tStatus |= QHFC_GC_FAULT;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
   else if(HPSStatusV1.Warning & QHFC_V1_WARNING_VOLTAGELOW)
   {
-    Status |= QHFC_V2_WARNING_FCVOLTAGELOW;
+    tStatus |= QHFC_GC_WARNING;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
-  //LI voltage low
+  Status2 |= (tStatus << QHFC_GC_STA2_FCVOLTAG);
   //fan speed error
+  tStatus = 0;
   if(HPSStatusV1.Warning & QHFC_V1_WARNING_FANSPEED)
   {
-    Status |= QHFC_V2_WARNING_FANSPEED;
+    tStatus |= QHFC_GC_WARNING;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
-  //h2 leakage
+  Status2 |= (tStatus << QHFC_GC_STA2_FANSPEED);
   //performance low
+  tStatus = 0;
   if(HPSStatusV1.Warning & QHFC_V1_WARNING_PERFORMLOW)
   {
-    Status |= QHFC_V2_WARNING_PERFORMLOW;
+    tStatus |= QHFC_GC_WARNING;
+    tStatus |= QHFC_GC_STA2_FC1;
   }
+  Status2 |= (tStatus << QHFC_GC_STA2_PERFORMLOW);
 
-  GCStatus.FCStatus = Status;
+  GCStatus.FCStatus2 = Status2;
   GCStatus.FCTemperature[0] = HPSStatusV1._FCWENDU;
   GCStatus.FCTemperature[1] = 0;
   GCStatus.FCTemperature[2] = 0;
   GCStatus.FCTemperature[3] = 0;
+  GCStatus.AmbHumidity = HPSStatusV1.Humidity / 10;
   GCStatus.FCVoltage = HPSStatusV1._FCV;
   GCStatus.FCCurrent = HPSStatusV1._FCA;
   GCStatus.LIVoltage = HPSStatusV1._FCDCV;
   GCStatus.LICurrent = HPSStatusV1._FCDCA;
-  GCStatus.Press = HPSStatusV1._FCMPA;
-    
-  GCStatus.AmbTemperature = 0;
-  GCStatus.AmbHumidity = 0;
-  GCStatus.AmbControlStatus = 0;
+  GCStatus.Press[0] = HPSStatusV1._FCMPA / 10;
 }
 
 void AP_QHFC::Update_GC_OnOff(void)
 {
-  uint32_t Status = GCStatus.FCStatus;
+  uint32_t Status1 = GCStatus.FCStatus1;
 
-  Status = Status & (~((uint32_t)0x00000003));
+  Status1 = Status1 & (~((uint32_t)0x00000003));
   if(OnOff_Status == QHFC_CMD_PARAM_ON)
   {
-    Status |= QHFC_V2_ON;
+    Status1 |= QHFC_V2_ON;
   }
-  GCStatus.FCStatus = Status;
+  GCStatus.FCStatus1 = Status1;
+}
+
+void AP_QHFC::Update_GC_HPSLost(void)
+{
+  uint32_t Status1 = GCStatus.FCStatus1;
+
+  Status1 = Status1 & (~((uint32_t)0x00C00000));
+  if(PacketLostCnt_IsOver())
+  {
+    Status1 |= QHFC_V2_HPSLOST;
+  }
+  GCStatus.FCStatus1 = Status1;
 }
 
 uint16_t AP_QHFC::GetFCFault(void)
 {
   uint8_t i;
-  uint32_t Status = GCStatus.FCStatus;
+  uint32_t Status1 = GCStatus.FCStatus1 >> 4;
+  uint32_t Status2 = GCStatus.FCStatus2;
   uint16_t Result = 0;
 
-     // on/off bit
-  for(i = 0;i < 15;i++)
+  //status1
+  for(i = 0;i < 2;i++)
   {
-    Status >>= 2;
-    if((Status & 0x03) == 0x02)
+    if((Status1 & 0x03) == QHFC_GC_FAULT)
       Result |= 0x0001;
     Result <<= 1;
+    Status1 >>= 2;
+  }
+  //status2
+  for(i = 0;i < 5;i++)
+  {
+    if((Status2 & 0x03) == QHFC_GC_FAULT)
+      Result |= 0x0001;
+    Result <<= 1;
+    Status2 >>= 6;
   }
   return Result;
 }
 uint16_t AP_QHFC::GetFCWarning(void)
 {
   uint8_t i;
-  uint32_t Status = GCStatus.FCStatus;
+  uint32_t Status1 = GCStatus.FCStatus1 >> 4;
+  uint32_t Status2 = GCStatus.FCStatus2;
   uint16_t Result = 0;
 
-     // on/off bit
-  for(i = 0;i < 15;i++)
+  //status1
+  for(i = 0;i < 2;i++)
   {
-    Status >>= 2;
-    if((Status & 0x03) == 0x01)
+    if((Status1 & 0x03) == QHFC_GC_WARNING)
       Result |= 0x0001;
     Result <<= 1;
+    Status1 >>= 2;
+  }
+  //status2
+  for(i = 0;i < 5;i++)
+  {
+    if((Status2 & 0x03) == QHFC_GC_WARNING)
+      Result |= 0x0001;
+    Result <<= 1;
+    Status2 >>= 6;
   }
   return Result;
 }
@@ -492,6 +538,23 @@ void AP_QHFC::_Clear_Cmd(void)
   OnOff_Cmd_buf = QHFC_CMD_PARAM_NONE;
 }
 
+void AP_QHFC::PacketLostCnt_Add(void)
+{
+  if(PacketLostCnt < QHFC_PACKETLOSTCNT_MAX + 1)
+    PacketLostCnt++;
+}
+void AP_QHFC::PacketLostCnt_Clr(void)
+{
+  PacketLostCnt = 0;
+}
+bool AP_QHFC::PacketLostCnt_IsOver(void)
+{
+  if(PacketLostCnt >= QHFC_PACKETLOSTCNT_MAX)
+    return true;
+  else
+    return false;
+}
+
 void AP_QHFC::tick(void)// 定时器函数
 {
   uint32_t now = AP_HAL::millis();
@@ -519,6 +582,7 @@ void AP_QHFC::tick(void)// 定时器函数
       {
         _Send_Cmd();
         Cmd_Retry_Cnt++;
+        PacketLostCnt_Add();
       }
       else
       {
@@ -532,6 +596,7 @@ void AP_QHFC::tick(void)// 定时器函数
     if(Cmd_Timeout_Cnt >= CMD_TIMEOUT_MAX)
     {
       send_woshoubao();
+      PacketLostCnt_Add();
       Cmd_Timeout_Cnt = 0;
     }
   }

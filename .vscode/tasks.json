@@ -18,6 +18,13 @@
             "problemMatcher": [],
         },
         {
+            "label": "config-CubeOrangePlus",
+            "type": "shell",
+            "command": "./waf configure --board CubeOrangePlus",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
             "label": "config-SITL",
             "type": "shell",
             "command": "./waf configure --board sitl",

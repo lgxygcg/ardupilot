@@ -1436,6 +1436,7 @@ void AP_Param::set_value(enum ap_var_type type, void *ptr, float value)
 // load default values for scalars in a group. This does not recurse
 // into other objects. This is a static function that should be called
 // in the objects constructor
+// 加载组中标量的默认值。这不会重复出现在其他对象中。这是一个静态函数，应该在对象构造函数中调用
 void AP_Param::setup_object_defaults(const void *object_pointer, const struct GroupInfo *group_info)
 {
     ptrdiff_t base = (ptrdiff_t)object_pointer;
@@ -1541,6 +1542,7 @@ bool AP_Param::load_all()
  * reload from hal.util defaults file or embedded param region
  * @last_pass: if this is the last pass on defaults - unknown parameters are
  *             ignored but if this is set a warning will be emitted
+ *             如果这是最后一次传递默认值-将忽略未知参数，但如果设置了此参数，将发出警告
  */
 void AP_Param::reload_defaults_file(bool last_pass)
 {

@@ -36,6 +36,8 @@
 
 #define QHFC_RECVBUF_SIZE       (64)
 
+#define QHFC_PACKETLOSTCNT_MAX  (8)
+
 #define QHFC_V1_WARNING_VOLTAGELOW      (0x0001)
 #define QHFC_V1_WARNING_TEMPHIGH        (0x0002)
 #define QHFC_V1_WARNING_PRESSLOW        (0x0004)
@@ -48,21 +50,22 @@
 #define QHFC_V2_OFF                     (0x00000000)
 #define QHFC_V2_ON                      (0x00000001)
 
-#define QHFC_V2_WARNING_PRESSLOW        (0x00000004)
-#define QHFC_V2_WARNING_TEMPHIGH        (0x00000010)
-#define QHFC_V2_WARNING_FCVOLTAGELOW    (0x00000040)
-#define QHFC_V2_WARNING_LIVOLTAGELOW    (0x00000100)
-#define QHFC_V2_WARNING_FANSPEED        (0x00000400)
-#define QHFC_V2_WARNING_H2LEAKAGE       (0x00001000)
-#define QHFC_V2_WARNING_PERFORMLOW      (0x00004000)
+#define QHFC_V2_HPSACT                  (0x00000000)
+#define QHFC_V2_HPSLOST                 (0x00400000)
 
-#define QHFC_V2_FAULT_PRESSLOW          (0x00000008)
-#define QHFC_V2_FAULT_TEMPHIGH          (0x00000020)
-#define QHFC_V2_FAULT_FCVOLTAGELOW      (0x00000080)
-#define QHFC_V2_FAULT_LIVOLTAGELOW      (0x00000200)
-#define QHFC_V2_FAULT_FANSPEED          (0x00000800)
-#define QHFC_V2_FAULT_H2LEAKAGE         (0x00002000)
-#define QHFC_V2_FAULT_PERFORMLOW        (0x00008000)
+#define QHFC_GC_STA2_PRESS              (0)
+#define QHFC_GC_STA2_TEMP               (6)
+#define QHFC_GC_STA2_FCVOLTAG           (12)
+#define QHFC_GC_STA2_FANSPEED           (18)
+#define QHFC_GC_STA2_PERFORMLOW         (24)
+
+#define QHFC_GC_WARNING                 (1)
+#define QHFC_GC_FAULT                   (2)
+
+#define QHFC_GC_STA2_FC1                     (0x00000004)
+#define QHFC_GC_STA2_FC2                     (0x00000008)
+#define QHFC_GC_STA2_FC3                     (0x00000010)
+#define QHFC_GC_STA2_FC4                     (0x00000020)
 
 enum class FCFailsafeAction : uint8_t {
         NONE               = 0,
@@ -72,17 +75,16 @@ enum class FCFailsafeAction : uint8_t {
     };
 
 typedef struct PACKED _bagQH_FCStatus{
-    uint32_t FCStatus;
+    uint32_t FCStatus1;
+    uint32_t FCStatus2;
     int16_t FCTemperature[4];
     uint16_t FCVoltage;
     uint16_t FCCurrent;
     uint16_t LIVoltage;
     int16_t LICurrent;
-    uint16_t Press;
+    uint16_t Press[4];
     
-    int16_t AmbTemperature;
     uint8_t AmbHumidity;
-    uint8_t AmbControlStatus;
 }QH_GCStatus;
 typedef struct PACKED _bagQH_HPSStatusV2{
     uint32_t SystemTick;
@@ -138,13 +140,14 @@ typedef struct PACKED _bagQH_HPSStatusV2{
 }QH_HPSStatusV2;
 
 typedef struct PACKED _bagQH_HPSStatusV1{
-    uint32_t _FCV;
-    uint32_t _FCA;
-    uint32_t _FCWENDU;
-    uint32_t _FCW;
-    uint32_t _FCDCV;
-    uint32_t _FCDCA;
-    uint32_t _FCKW;
+    uint16_t Humidity;
+    uint16_t _FCV;
+    uint16_t _FCA;
+    int16_t _FCWENDU;
+    uint16_t _FCW;
+    uint16_t _FCDCV;
+    int16_t _FCDCA;
+    uint16_t _FCKW;
     uint32_t _FCMPA;
 
     uint16_t Warning;
@@ -231,6 +234,7 @@ private:
     uint16_t OnOff_HPSAck;
     uint32_t Cmd_Timeout_Cnt;
     uint16_t Cmd_Retry_Cnt;
+    uint32_t PacketLostCnt;
 
     uint16_t FCFault_Last;
     uint16_t FCWarning_Last;
@@ -243,8 +247,12 @@ private:
     void HPSStatusV2_To_GC(void);
     void HPSStatusV1_To_GC(void);
     void Update_GC_OnOff(void);
+    void Update_GC_HPSLost(void);
     uint16_t GetFCFault(void);
     uint16_t GetFCWarning(void);
+    void PacketLostCnt_Add(void);
+    void PacketLostCnt_Clr(void);
+    bool PacketLostCnt_IsOver(void);
     //<-- ------------------------------------------------------------------- ->//
     //
          uint8_t recv_buf[QHFC_RECVBUF_SIZE];

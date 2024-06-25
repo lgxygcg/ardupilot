@@ -1383,6 +1383,7 @@ void GCS_MAVLINK::update_send()
 #endif
 
         // check if any "specially handled" messages should be sent out
+        // 检查是否应该发送任何“特殊处理”的消息
         {
             const int8_t next = deferred_message_to_send_index(start16);
             if (next != -1) {
@@ -1412,6 +1413,7 @@ void GCS_MAVLINK::update_send()
         }
 
         // check for any messages that the code has explicitly sent
+        // 检查代码是否明确发送了任何消息
         const int16_t fs = pushed_ap_message_ids.first_set();
         if (fs != -1) {
             ap_message next = (ap_message)fs;
@@ -2766,49 +2768,50 @@ void GCS_MAVLINK::send_mav_message_QH_FCStatus(void)
 {
     AP_QHFC *fc = AP_QHFC::get_singleton();
 
-    uint32_t Status;
+    uint32_t Status1,Status2;
     int16_t FCTemperature[4];
-    uint16_t Press;
+    uint16_t Press[4];
     uint16_t FCVoltage;
     uint16_t FCCurrent;
     uint16_t LIVoltage;
     int16_t LICurrent;
-    int16_t AmbTemperature;
     uint8_t AmbHumidity;
-    uint8_t AmbControlStatus;
 
     #if(1)
-    Status = fc->GCStatus.FCStatus;
+    Status1 = fc->GCStatus.FCStatus1;
+    Status2 = fc->GCStatus.FCStatus2;
     FCTemperature[0] = fc->GCStatus.FCTemperature[0];
     FCTemperature[1] = fc->GCStatus.FCTemperature[1];
     FCTemperature[2] = fc->GCStatus.FCTemperature[2];
     FCTemperature[3] = fc->GCStatus.FCTemperature[3];
-    Press = fc->GCStatus.Press;
+    Press[0] = fc->GCStatus.Press[0];
+    Press[1] = fc->GCStatus.Press[1];
+    Press[2] = fc->GCStatus.Press[2];
+    Press[3] = fc->GCStatus.Press[3];
     FCVoltage = fc->GCStatus.FCVoltage;
     FCCurrent = fc->GCStatus.FCCurrent;
     LIVoltage = fc->GCStatus.LIVoltage;
     LICurrent = fc->GCStatus.LICurrent;
-    AmbTemperature = fc->GCStatus.AmbTemperature;
     AmbHumidity = fc->GCStatus.AmbHumidity;
-    AmbControlStatus = fc->GCStatus.AmbControlStatus;
     #else
-    fc->CalFCVoltCur(FCVoltage,FCCurrent);
-    Status = 1;
-    FCTemperature[0] = 10;
-    FCTemperature[1] = 11;
-    FCTemperature[2] = 12;
-    FCTemperature[3] = 13;
-    FCVoltage = 20;
-    FCCurrent = 21;
-    Press = 3;
-    LIVoltage = 4;
+    Status1 = (fc->GCStatus.FCStatus1 & 0x03) | 0x00000020;
+    Status2 = 0x00000005;
+    FCTemperature[0] = 25;
+    FCTemperature[1] = 26;
+    FCTemperature[2] = 27;
+    FCTemperature[3] = 28;
+    Press[0] = 100;
+    Press[1] = 110;
+    Press[2] = 120;
+    Press[3] = 130;
+    FCVoltage = 540;
+    FCCurrent = 10;
+    LIVoltage = 480;
     LICurrent = 5;
-    AmbTemperature = 6;
-    AmbHumidity = 7;
-    AmbControlStatus = 8;
+    AmbHumidity = 60;
     #endif
 
-    mavlink_msg_qh_fcstatus_send(chan, Status, FCTemperature, FCVoltage, FCCurrent, LIVoltage, LICurrent, Press, AmbTemperature, AmbHumidity, AmbControlStatus);
+    mavlink_msg_qh_fcstatus_send(chan, Status1, Status2, FCTemperature, FCVoltage, FCCurrent, LIVoltage, LICurrent, Press, AmbHumidity);
 }
 //<-- ------------------------------------------------------------------- ->//
 

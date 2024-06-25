@@ -376,6 +376,10 @@ AP_BattMonitor::init()
                 drivers[instance] = new AP_BattMonitor_EFI(*this, state[instance], _params[instance]);
                 break;
 #endif // AP_BATTERY_EFI_ENABLED
+#if AP_BATTERY_QHFC_BATTERYINFO_ENABLED
+            case Type::QHFC_Volt:
+                break;
+#endif
             case Type::NONE:
             default:
                 break;

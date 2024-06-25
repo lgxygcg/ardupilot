@@ -8,7 +8,8 @@
             "name": "ARM Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/fmuv3/bin/arducopter",
+            //"program": "${workspaceRoot}/build/fmuv3/bin/arducopter",
+            "program": "${workspaceRoot}/build/CubeOrange/bin/arducopter",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -20,7 +21,8 @@
             "setupCommands": [
                 {
                     "description": "connect debug file(.elf)to gdb",
-                    "text": "file ${workspaceRoot}/build/fmuv3/bin/arducopter",
+                    //"text": "file ${workspaceRoot}/build/fmuv3/bin/arducopter",
+                    "text": "file ${workspaceRoot}/build/CubeOrange/bin/arducopter",
                     "ignoreFailures": false
                 },
                 {
