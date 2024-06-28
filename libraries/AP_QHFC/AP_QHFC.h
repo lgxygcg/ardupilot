@@ -34,7 +34,7 @@
 #define QHFC_TEMP_MIN           (-600)      //-600 -> -60degree
 #define QHFC_TEMP_MAX           (3000)      //3000 -> 300degree
 
-#define QHFC_RECVBUF_SIZE       (64)
+#define QHFC_RECVBUF_SIZE       (128)
 
 #define QHFC_PACKETLOSTCNT_MAX  (8)
 
@@ -43,15 +43,23 @@
 #define QHFC_V1_WARNING_PRESSLOW        (0x0004)
 #define QHFC_V1_WARNING_FANSPEED        (0x0008)
 #define QHFC_V1_WARNING_PERFORMLOW      (0x0010)
+#define QHFC_V1_WARNING_LIVOLTAGELOW    (0x0020)
 
 #define QHFC_V1_FAULT_VOLTAGELOW        (0x0001)
 #define QHFC_V1_FAULT_TEMPHIGH          (0x0002)
+#define QHFC_V1_FAULT_PRESSLOW          (0x0004)
+#define QHFC_V1_FAULT_H2LEAKAGE         (0x0008)
+#define QHFC_V1_FAULT_CELLLEAKAGE       (0x0010)
 
 #define QHFC_V2_OFF                     (0x00000000)
 #define QHFC_V2_ON                      (0x00000001)
 
 #define QHFC_V2_HPSACT                  (0x00000000)
 #define QHFC_V2_HPSLOST                 (0x00400000)
+
+#define QHFC_GC_STA1_LIVOTAGELOW        (4)
+#define QHFC_GC_STA1_H2LEAKGE           (6)
+#define QHFC_GC_STA1_CELLLEAKGE         (8)
 
 #define QHFC_GC_STA2_PRESS              (0)
 #define QHFC_GC_STA2_TEMP               (6)
@@ -143,10 +151,11 @@ typedef struct PACKED _bagQH_HPSStatusV1{
     uint16_t Humidity;
     uint16_t _FCV;
     uint16_t _FCA;
-    int16_t _FCWENDU;
+    int16_t _FCWENDU1;
     uint16_t _FCW;
     uint16_t _FCDCV;
     int16_t _FCDCA;
+    int16_t _FCWENDU2;
     uint16_t _FCKW;
     uint32_t _FCMPA;
 

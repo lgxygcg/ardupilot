@@ -150,11 +150,12 @@ void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)
         HPSStatusV1.Humidity = ((uint16_t)buf[9]<<8) | buf[10];
         HPSStatusV1._FCV = ((uint16_t)buf[11]<<8) | buf[12];   //两数值合并
         HPSStatusV1._FCA = ((uint16_t)buf[13]<<8) | buf[14]; 
-        HPSStatusV1._FCWENDU = ((uint16_t)buf[15]<<8) | buf[16];
+        HPSStatusV1._FCWENDU1 = ((uint16_t)buf[15]<<8) | buf[16];
         HPSStatusV1._FCW = ((uint16_t)buf[17]<<8) | buf[18]; 
         HPSStatusV1._FCDCV = ((uint16_t)buf[19]<<8) | buf[20];
         HPSStatusV1._FCDCA = ((uint16_t)buf[21]<<8) | buf[22];
-        HPSStatusV1._FCKW = ((uint16_t)buf[27]<<8) | buf[28];
+        HPSStatusV1._FCWENDU2 = ((uint16_t)buf[23]<<8) | buf[24];
+        HPSStatusV1._FCKW = ((uint16_t)buf[25]<<8) | buf[26];
         HPSStatusV1._FCMPA = ((uint32_t)buf[29]<<24) | ((uint32_t)buf[30]<<16) | ((uint32_t)buf[31]<<8) | buf[32];
 
         HPSStatusV1.Warning = ((uint16_t)buf[41]<<8) | buf[42];
@@ -198,10 +199,11 @@ bool AP_QHFC::update()
   data = 0;
 
   if(numc <= 0)_step = 0;
-  if(recv_cnt >= QHFC_RECVBUF_SIZE)_step = 0;
 
   for(int16_t i = 0; i < numc; i++)
   {
+    if(recv_cnt >= QHFC_RECVBUF_SIZE)_step = 0;
+    
     data =_port->read();
 
     switch(_step)
@@ -245,7 +247,6 @@ bool AP_QHFC::update()
           {
             packedReceived(recv_buf,recv_cnt);
             PacketLostCnt_Clr();
-            return true;
           }
           _step = 0;
         }
@@ -279,13 +280,44 @@ void AP_QHFC::HPSStatusV2_To_GC(void)
 }
 void AP_QHFC::HPSStatusV1_To_GC(void)
 {
-  //uint32_t Status1 = GCStatus.FCStatus1 & 0x03;
+  uint32_t Status1 = GCStatus.FCStatus1 & 0xFFC00003;
   uint32_t Status2 = 0x00;
   uint32_t tStatus;
 
+  ////////////////////Status1////////////////////
+  //Li voltage low
+  tStatus = 0;
+  if(HPSStatusV1.Warning & QHFC_V1_WARNING_LIVOLTAGELOW)
+  {
+    tStatus |= QHFC_GC_WARNING;
+  }
+  Status1 |= (tStatus << QHFC_GC_STA1_LIVOTAGELOW);
+  //H2 leakage
+  tStatus = 0;
+  if(HPSStatusV1.Fault & QHFC_V1_FAULT_H2LEAKAGE)
+  {
+    tStatus |= QHFC_GC_FAULT;
+  }
+  Status1 |= (tStatus << QHFC_GC_STA1_H2LEAKGE);
+  //cell leakage
+  tStatus = 0;
+  if(HPSStatusV1.Fault & QHFC_V1_FAULT_CELLLEAKAGE)
+  {
+    tStatus |= QHFC_GC_FAULT;
+  }
+  Status1 |= (tStatus << QHFC_GC_STA1_CELLLEAKGE);
+
+  GCStatus.FCStatus1 = Status1;
+
+  ////////////////////Status2////////////////////
   //press
   tStatus = 0;
-  if(HPSStatusV1.Warning & QHFC_V1_WARNING_PRESSLOW)
+  if(HPSStatusV1.Fault & QHFC_V1_FAULT_PRESSLOW)
+  {
+    tStatus |= QHFC_GC_FAULT;
+    tStatus |= QHFC_GC_STA2_FC1;
+  }
+  else if(HPSStatusV1.Warning & QHFC_V1_WARNING_PRESSLOW)
   {
     tStatus |= QHFC_GC_WARNING;
     tStatus |= QHFC_GC_STA2_FC1;
@@ -335,8 +367,8 @@ void AP_QHFC::HPSStatusV1_To_GC(void)
   Status2 |= (tStatus << QHFC_GC_STA2_PERFORMLOW);
 
   GCStatus.FCStatus2 = Status2;
-  GCStatus.FCTemperature[0] = HPSStatusV1._FCWENDU;
-  GCStatus.FCTemperature[1] = 0;
+  GCStatus.FCTemperature[0] = HPSStatusV1._FCWENDU1;
+  GCStatus.FCTemperature[1] = HPSStatusV1._FCWENDU2;
   GCStatus.FCTemperature[2] = 0;
   GCStatus.FCTemperature[3] = 0;
   GCStatus.AmbHumidity = HPSStatusV1.Humidity / 10;

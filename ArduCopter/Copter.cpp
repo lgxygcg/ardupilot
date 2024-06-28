@@ -257,7 +257,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100, 171),
 #endif
     //<-- ------------------------------------------------------------------- ->//
-    SCHED_TASK(update_QHFC,          10,   50,  174),
+    SCHED_TASK(update_QHFC,          10,   100,  174),
     //<-- ------------------------------------------------------------------- ->//
 };
 
