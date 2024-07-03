@@ -63,7 +63,8 @@ AP_QHFC::AP_QHFC(void)
     debug_cnt = 0;
     //<-- ------------------------------------------------------------------- ->//
 }
-
+#include "../../GCS_MAVLink/GCS.h"
+#include "../../ArduCopter/GCS_Mavlink.h"
 /*
  * init - perform required initialisation
  */
@@ -87,7 +88,7 @@ void AP_QHFC::init(const AP_SerialManager& serial_manager)
 
     hal.scheduler->register_io_process(FUNCTOR_BIND_MEMBER(&AP_QHFC::tick, void));//定时函数用
     update();
-  } 
+  }
 }
 
 void AP_QHFC::packedReceived(uint8_t *buf,uint16_t len)

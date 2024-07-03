@@ -6205,6 +6205,8 @@ void GCS_MAVLINK::initialise_message_intervals_from_streamrates()
     for (uint8_t i=0; all_stream_entries[i].ap_message_ids != nullptr; i++) {
         initialise_message_intervals_for_stream(all_stream_entries[i].stream_id);
     }
+    set_mavlink_message_id_interval(MAVLINK_MSG_ID_QH_FCSTATUS, 500);
+
 #if HAL_HIGH_LATENCY2_ENABLED
     if (!is_high_latency_link) {
         set_mavlink_message_id_interval(MAVLINK_MSG_ID_HEARTBEAT, 1000);
