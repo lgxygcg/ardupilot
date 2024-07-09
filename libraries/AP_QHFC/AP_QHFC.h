@@ -201,6 +201,8 @@ public:
     FCFailsafeAction CurAction;
     FCFailsafeAction LastAction;
     FCFailsafeAction handle_FC_failsafe(bool is_armed);
+    uint16_t GetFCFault(void);
+    uint16_t GetFCWarning(void);
 
     uint32_t last_frame_ms;
     uint32_t last_send_frame_ms;
@@ -257,8 +259,6 @@ private:
     void HPSStatusV1_To_GC(void);
     void Update_GC_OnOff(void);
     void Update_GC_HPSLost(void);
-    uint16_t GetFCFault(void);
-    uint16_t GetFCWarning(void);
     void PacketLostCnt_Add(void);
     void PacketLostCnt_Clr(void);
     bool PacketLostCnt_IsOver(void);

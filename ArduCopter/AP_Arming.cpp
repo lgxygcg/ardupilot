@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include <AP_QHFC/AP_QHFC.h>
 
 bool AP_Arming_Copter::pre_arm_checks(bool display_failure)
 {
@@ -40,6 +41,13 @@ bool AP_Arming_Copter::run_pre_arm_checks(bool display_failure)
     }
 
     if (!disarm_switch_checks(display_failure)) {
+        return false;
+    }
+
+    AP_QHFC *qhfc = AP_QHFC::get_singleton();
+    if((qhfc->GetFCWarning() != 0) || (qhfc->GetFCFault() != 0))
+    {
+        check_failed(display_failure, "FuelCell Error");
         return false;
     }
 
@@ -648,6 +656,13 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
     // check if safety switch has been pushed
     if (hal.util->safety_switch_state() == AP_HAL::Util::SAFETY_DISARMED) {
         check_failed(true, "Safety Switch");
+        return false;
+    }
+
+    AP_QHFC *qhfc = AP_QHFC::get_singleton();
+    if((qhfc->GetFCWarning() != 0) || (qhfc->GetFCFault() != 0))
+    {
+        check_failed(true,"FuelCell Error");
         return false;
     }
 

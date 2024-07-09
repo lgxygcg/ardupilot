@@ -63,8 +63,6 @@ AP_QHFC::AP_QHFC(void)
     debug_cnt = 0;
     //<-- ------------------------------------------------------------------- ->//
 }
-#include "../../GCS_MAVLink/GCS.h"
-#include "../../ArduCopter/GCS_Mavlink.h"
 /*
  * init - perform required initialisation
  */
@@ -412,7 +410,7 @@ uint16_t AP_QHFC::GetFCFault(void)
   uint16_t Result = 0;
 
   //status1
-  for(i = 0;i < 2;i++)
+  for(i = 0;i < 10;i++)
   {
     if((Status1 & 0x03) == QHFC_GC_FAULT)
       Result |= 0x0001;
@@ -437,7 +435,7 @@ uint16_t AP_QHFC::GetFCWarning(void)
   uint16_t Result = 0;
 
   //status1
-  for(i = 0;i < 2;i++)
+  for(i = 0;i < 10;i++)
   {
     if((Status1 & 0x03) == QHFC_GC_WARNING)
       Result |= 0x0001;
